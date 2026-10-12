@@ -54,14 +54,17 @@ export function PlansScreen() {
       <div class="stack-12 mt-16">
         {seg === 'workouts' && (
           <>
-            <button class="btn btn-soft full" onClick={() => push('template', { id: null })}><Icon name="plus" size={20} /> New workout</button>
+            <div class="btn-pair">
+              <button class="btn btn-soft" onClick={() => push('template', { id: null })}><Icon name="plus" size={20} /> New workout</button>
+              <button class="btn btn-soft" onClick={() => push('import')}><Icon name="import" size={20} /> Import</button>
+            </div>
             <div class="list">
               {s.templates.map((t) => (
                 <TemplateRow key={t.id} t={t} exercises={exercises} workouts={s.workouts} onOpen={() => push('template', { id: t.id })}
                   action={<button class="icon-btn" aria-label={`${t.name} options`} onClick={() => templateSheet(t)}><Icon name="more" /></button>} />
               ))}
             </div>
-            {!s.templates.length && <Empty title="No workouts saved" body="A workout is a list of exercises with target sets and reps that you can start any day." />}
+            {!s.templates.length && <Empty title="No workouts saved" body="A workout is a list of exercises with target sets and reps that you can start any day. Already have routines in Boostcamp? Copy one as text and tap Import." />}
           </>
         )}
         {seg === 'programs' && (
@@ -152,6 +155,8 @@ export function TemplateEditor({ id }) {
                     <span>Rest</span><strong class="num">{it.rest == null ? 'Default' : it.rest ? fmtClock(it.rest) : 'Off'}</strong>
                   </button>
                 </div>
+                <input class="ti-note" type="text" placeholder="Note, e.g. RPE 8 or seat 4" value={it.note || ''} aria-label={`Note for ${ex.name}`}
+                  onInput={(e) => setItem(i, { note: e.target.value })} />
               </div>
             );
           })}

@@ -206,6 +206,7 @@ table { border-collapse: collapse; width: 100%; }
 .chips.wrap { flex-wrap: wrap; }
 .chips-scroll { overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
 .chips-scroll::-webkit-scrollbar { display: none; }
+.panel .chips-scroll { margin: 0 -14px; padding: 0 14px; scroll-padding: 0 14px; }
 .chip {
   flex: none; height: 36px; padding: 0 15px; border-radius: 18px;
   background: var(--surface-2); color: var(--text-2); font-weight: 620; font-size: 15px; white-space: nowrap;
@@ -283,11 +284,15 @@ textarea { resize: none; line-height: 1.45; }
 .sheet-backdrop { position: absolute; inset: 0; background: rgba(5, 8, 10, 0.55); animation: fade 0.18s ease; }
 .sheet {
   position: relative; background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow);
-  max-height: calc(100vh - var(--safe-t) - 40px); overflow-y: auto; overscroll-behavior: contain;
+  max-height: calc(100vh - var(--safe-t) - 40px); max-height: calc(100dvh - var(--safe-t) - 40px); overflow-y: auto; overscroll-behavior: contain;
   padding-bottom: calc(var(--safe-b) + 12px); animation: rise 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
   width: 100%; max-width: 640px; margin: 0 auto;
 }
-.sheet-tall { height: calc(100vh - var(--safe-t) - 28px); display: flex; flex-direction: column; overflow: hidden; }
+.sheet-tall { height: calc(100vh - var(--safe-t) - 28px); height: calc(100dvh - var(--safe-t) - 28px); display: flex; flex-direction: column; overflow: hidden; }
+.form-sheet { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.form-head { padding: 12px 20px 0; }
+.form-head .sheet-title { margin: 0; }
+.form-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 18px; padding: 14px 20px 20px; }
 .sheet-grip { width: 38px; height: 5px; border-radius: 3px; background: var(--surface-3); margin: 8px auto 4px; }
 .sheet-pad { padding: 12px 20px 8px; }
 .sheet-pad.form { display: flex; flex-direction: column; gap: 18px; }
@@ -617,3 +622,27 @@ button.pick-box { flex: none; }
 .ex-visual.compact .seg button { height: 30px; font-size: 14px; }
 .peek-muscles { display: flex; flex-wrap: wrap; gap: 2px 14px; }
 .peek-muscles strong { font-weight: 700; margin-right: 4px; }
+
+/* ---------- import ---------- */
+.btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-pair .btn { padding: 0 10px; }
+.block { display: block; }
+.paste-box { width: 100%; min-height: 220px; font-size: 16px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.5; }
+.imp-found { color: var(--green); font-weight: 600; }
+.imp-card { background: var(--surface); border-radius: 18px; padding: 12px 12px 6px 16px; border-left: 6px solid var(--plate); display: flex; flex-direction: column; gap: 10px; }
+.title-input.imp-name { font-size: 22px !important; padding: 2px 0 6px !important; border-bottom: 1px solid var(--line) !important; border-radius: 0; }
+.swatches.sm { gap: 10px; }
+.swatches.sm .swatch { width: 26px; height: 26px; box-shadow: inset 0 0 0 5px rgba(0, 0, 0, 0.22); }
+.swatches.sm .swatch.on { outline-width: 2px; outline-offset: 2px; }
+.imp-replace { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: var(--surface-2); border-radius: 12px; }
+.imp-rows > * + * { border-top: 1px solid var(--line); }
+.imp-row { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 8px 0; }
+.imp-row.skip > :not(.icon-btn) { opacity: 0.45; }
+.imp-row.skip .pick-name { text-decoration: line-through; }
+.imp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.imp-main .pick-name { overflow: hidden; text-overflow: ellipsis; }
+.imp-sets { flex: none; font-weight: 700; color: var(--text-2); font-size: 15px; }
+.imp-close { color: var(--yellow); }
+.imp-new { color: var(--blue); }
+.ti-note, input.ti-note { margin-top: 10px; width: 100%; min-height: 40px; padding: 6px 10px; font-size: 16px; background: var(--surface-2); }
+input.ti-note:placeholder-shown:not(:focus) { background: transparent; border: 1.5px dashed var(--surface-3); }

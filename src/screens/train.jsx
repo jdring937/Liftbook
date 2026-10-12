@@ -164,8 +164,13 @@ export function TrainScreen() {
           <TemplateRow key={t.id} t={t} exercises={exercises} workouts={s.workouts} onOpen={() => templateSheet(t)}
             action={<button class="play" aria-label={`Start ${t.name}`} onClick={() => begin({ template: t })}><Icon name="play" size={18} fill="currentColor" stroke={0} /></button>} />
         ))}
-        {!sorted.length && <p class="muted pad-16">Build a workout once, then start it here in one tap.</p>}
       </div>
+      {!sorted.length && (
+        <div class="pad-16">
+          <p class="muted">Build a workout once, then start it here in one tap.</p>
+          <button class="link" onClick={() => push('import')}><Icon name="import" size={18} /> Import workouts from Boostcamp</button>
+        </div>
+      )}
       <button class="btn btn-soft full mt-16" onClick={() => begin({})}><Icon name="plus" size={20} /> Start an empty workout</button>
     </div>
   );

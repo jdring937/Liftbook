@@ -9,6 +9,7 @@ import { PlansScreen, TemplateEditor, ProgramScreen, ProgramEditor } from './scr
 import { WorkoutEditor } from './screens/workout.jsx';
 import { ExerciseScreen } from './screens/exercise.jsx';
 import { SettingsScreen } from './screens/settings.jsx';
+import { ImportScreen } from './screens/importer.jsx';
 import { fmtClock } from './lib/util.js';
 import { useState } from 'preact/hooks';
 
@@ -29,6 +30,7 @@ function Screen({ s }) {
     case 'program': return <ProgramScreen id={p.id} />;
     case 'programEdit': return <ProgramEditor id={p.id} />;
     case 'settings': return <SettingsScreen />;
+    case 'import': return <ImportScreen />;
     default: return null;
   }
 }

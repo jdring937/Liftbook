@@ -97,6 +97,7 @@ const L = [
   ['Dumbbell Row', 'dumbbell', 'lats upperBack', 'biceps rearDelts'],
   ['Chest-Supported Row (Dumbbell)', 'dumbbell', 'upperBack lats', 'biceps rearDelts'],
   ['T-Bar Row', 'barbell', 'upperBack lats', 'biceps rearDelts'],
+  ['Meadows Row', 'barbell', 'lats upperBack', 'rearDelts biceps forearms'],
   ['Inverted Row', 'bodyweight', 'upperBack lats', 'biceps rearDelts', 'reps'],
   ['Shrug (Barbell)', 'barbell', 'traps', 'forearms'],
   ['Shrug (Dumbbell)', 'dumbbell', 'traps', 'forearms'],

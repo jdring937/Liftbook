@@ -4,6 +4,7 @@ A personal strength training log that runs as an iPhone Home Screen web app. It 
 
 - Log workouts with a rest timer, previous-set values, and live PR flags
 - Saved workouts and multi-week programs
+- Import workouts copied as text from Boostcamp (exercise names are matched to the library)
 - History calendar with personal records
 - Training trends, per-exercise estimated 1RM (Brzycki or Epley), and a muscle tracker (body map, radar, table)
 - JSON backup and CSV export

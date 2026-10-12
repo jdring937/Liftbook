@@ -75,8 +75,8 @@ function Peek({ ex, on, onToggle, multi }) {
   );
 }
 
-export function ExercisePicker({ close, onPick, multi = true, title = 'Add exercises' }) {
-  const [q, setQ] = useState('');
+export function ExercisePicker({ close, onPick, multi = true, title = 'Add exercises', query = '' }) {
+  const [q, setQ] = useState(query);
   const [filter, setFilter] = useState(null);
   const [sel, setSel] = useState([]);
   const [peek, setPeek] = useState(null);
@@ -170,34 +170,38 @@ export function ExerciseForm({ initial = {}, close, onSaved }) {
     close();
   };
   return (
-    <div class="sheet-pad form">
-      <div class="row-between">
+    <div class="form-sheet">
+      <div class="form-head row-between">
         <h3 class="sheet-title">{initial.id ? 'Edit exercise' : 'New exercise'}</h3>
         <button class="icon-btn" aria-label="Close" onClick={close}><Icon name="x" /></button>
       </div>
-      <label class="field">
-        <span>Name</span>
-        <input type="text" value={f.name} onInput={(e) => set('name', e.target.value)} placeholder="e.g. Pec Deck (Machine)" />
-      </label>
-      <label class="field">
-        <span>Equipment</span>
-        <select value={f.equipment} onChange={(e) => set('equipment', e.target.value)}>
-          {Object.entries(EQUIPMENT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-      </label>
-      <div class="field">
-        <span>What you log</span>
-        <Chips options={[['weight', 'Weight and reps'], ['reps', 'Reps'], ['time', 'Time']]} value={f.kind} onChange={(v) => set('kind', v)} />
+      <div class="form-body">
+        <label class="field">
+          <span>Name</span>
+          <input type="text" value={f.name} onInput={(e) => set('name', e.target.value)} placeholder="e.g. Pec Deck (Machine)" />
+        </label>
+        <label class="field">
+          <span>Equipment</span>
+          <select value={f.equipment} onChange={(e) => set('equipment', e.target.value)}>
+            {Object.entries(EQUIPMENT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </label>
+        <div class="field">
+          <span>What you log</span>
+          <Chips options={[['weight', 'Weight and reps'], ['reps', 'Reps'], ['time', 'Time']]} value={f.kind} onChange={(v) => set('kind', v)} />
+        </div>
+        <div class="field">
+          <span>Main muscles <em class="muted">count a full set</em></span>
+          <MuscleToggles value={f.primary} onChange={(v) => setF((x) => ({ ...x, primary: v, secondary: x.secondary.filter((m) => !v.includes(m)) }))} />
+        </div>
+        <div class="field">
+          <span>Helper muscles <em class="muted">count half a set</em></span>
+          <MuscleToggles value={f.secondary} onChange={(v) => set('secondary', v)} exclude={f.primary} />
+        </div>
       </div>
-      <div class="field">
-        <span>Main muscles <em class="muted">count a full set</em></span>
-        <MuscleToggles value={f.primary} onChange={(v) => setF((x) => ({ ...x, primary: v, secondary: x.secondary.filter((m) => !v.includes(m)) }))} />
+      <div class="picker-foot">
+        <button class="btn btn-primary full" onClick={save}>{initial.id ? 'Save exercise' : 'Create exercise'}</button>
       </div>
-      <div class="field">
-        <span>Helper muscles <em class="muted">count half a set</em></span>
-        <MuscleToggles value={f.secondary} onChange={(v) => set('secondary', v)} exclude={f.primary} />
-      </div>
-      <button class="btn btn-primary full" onClick={save}>{initial.id ? 'Save exercise' : 'Create exercise'}</button>
     </div>
   );
 }

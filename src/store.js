@@ -175,7 +175,7 @@ export function newSet(src = {}) {
 export function newEntry(exId, opts = {}) {
   const n = opts.sets || 3;
   return {
-    id: uid(), exId, note: '', rest: opts.rest ?? null,
+    id: uid(), exId, note: opts.note || '', rest: opts.rest ?? null,
     target: opts.min || opts.max ? { min: opts.min, max: opts.max } : null,
     sets: Array.from({ length: n }, () => newSet()),
   };

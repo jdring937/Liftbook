@@ -167,7 +167,7 @@ export function sessionTargets(prev, ex, range, incKg) {
   });
   const same = sets.every((t, i) => t.r === work[i].r);
   const jump = sets.some((t, i) => t.r - (work[i].r || 0) > 1);
-  const note = same ? 'Match last time' : jump ? `Work up to ${min}–${max} reps` : 'One more rep per set than last time';
+  const note = same ? 'Match last time' : jump ? (min === max ? `Aim for ${max} reps` : `Work up to ${min}–${max} reps`) : 'One more rep per set than last time';
   return { sets, kind: same ? 'match' : 'more', note };
 }
 
