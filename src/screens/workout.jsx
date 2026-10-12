@@ -3,10 +3,11 @@ import {
   useStore, getState, allExercises, updateActive, finishActive, discardActive, saveWorkout, deleteWorkout,
   newEntry, newSet, startRest, adjustRest, stopRest, saveTemplate, templateFromWorkout,
 } from '../store.js';
-import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex } from '../lib/calc.js';
+import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets } from '../lib/calc.js';
 import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum, uid, plural, fmtSecs } from '../lib/util.js';
 import { Icon, NumInput, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
 import { openPicker, musclesText } from './pickers.jsx';
+import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
 
 const TYPE_LABEL = { w: 'W', d: 'D', f: 'F' };
 const TYPE_NAME = { n: 'Normal', w: 'Warm-up', d: 'Drop set', f: 'Failure' };
@@ -87,42 +88,86 @@ function useWakeLock(on) {
   }, [on]);
 }
 
+// ---------- placeholders ----------
+// Each set's grey values: a weight you changed on the set above carries down; otherwise today's
+// target, then the same set last time, then the set above. Tapping the check accepts them.
+const near = (a, b) => a != null && b != null && Math.abs(a - b) < 1e-6;
+function placeholders(entry, work, targets) {
+  const out = [];
+  let k = 0;
+  let above = null;
+  for (const s of entry.sets) {
+    if (s.type === 'w') { out.push({ w: null, r: null, t: null }); continue; }
+    const tg = targets ? targets.sets[Math.min(k, targets.sets.length - 1)] : null;
+    const last = work[k] || null;
+    const ph = {};
+    for (const f of ['w', 'r', 't']) {
+      const mine = above && above.set[f] != null && !near(above.set[f], above.ph[f]);
+      if (mine && (f === 'w' || !tg)) ph[f] = above.set[f];
+      else ph[f] = tg?.[f] ?? last?.[f] ?? (above ? above.set[f] ?? above.ph[f] : null) ?? null;
+    }
+    if (ph.r == null && entry.target) ph.r = entry.target.max || entry.target.min || null;
+    out.push(ph);
+    above = { set: s, ph };
+    k++;
+  }
+  return out;
+}
+
+function setText(v, ex, unit) {
+  if (!v) return '–';
+  const w = v.w != null ? fmtNum(wNum(v.w, unit, 2)) : null;
+  if (ex.kind === 'time') return `${w && v.w ? w + ' × ' : ''}${fmtSecs(v.t)}`;
+  if (ex.kind === 'reps') return v.w ? `+${w} × ${v.r}` : `${v.r} reps`;
+  return `${w} × ${v.r}`;
+}
+
+function targetSummary(tg, ex, unit) {
+  const sets = tg.sets;
+  const same = sets.every((t) => near(t.w, sets[0].w) || (t.w == null && sets[0].w == null)) && sets.every((t) => t.r === sets[0].r && t.t === sets[0].t);
+  if (!same) {
+    const oneW = sets.every((t) => near(t.w, sets[0].w));
+    if (oneW && ex.kind === 'weight') return `${fmtW(sets[0].w, unit)} × ${sets.map((t) => t.r).join(', ')}`;
+    return sets.map((t) => setText(t, ex, unit).replace(' reps', '')).join(', ');
+  }
+  const t = sets[0];
+  if (ex.kind === 'time') return `${sets.length} × ${fmtSecs(t.t)}${t.w ? ` at +${fmtW(t.w, unit)}` : ''}`;
+  if (ex.kind === 'reps') return `${sets.length} × ${t.r} reps${t.w ? ` at +${fmtW(t.w, unit)}` : ''}`;
+  return `${sets.length} × ${t.r} at ${fmtW(t.w, unit)}`;
+}
+
 // ---------- one set row ----------
-function SetRow({ set, label, prev, ex, unit, target, isPR, onChange, onDone, onMenu }) {
-  const prevW = prev && prev.w != null ? wNum(prev.w, unit, 2) : null;
-  const prevR = prev ? prev.r : null;
-  const prevT = prev ? prev.t : null;
-  const repsPh = prevR ?? (target && (target.max || target.min)) ?? null;
-  const prevText = prev
-    ? ex.kind === 'time' ? `${prev.w ? fmtNum(prevW) + ' × ' : ''}${fmtSecs(prev.t)}`
-      : ex.kind === 'reps' && !prev.w ? `${prev.r} reps` : `${fmtNum(prevW)} × ${prev.r}`
-    : '–';
-  const fillPrev = () => {
-    if (!prev) return;
-    onChange({ ...set, w: prev.w ?? set.w, r: prev.r ?? set.r, t: prev.t ?? set.t });
-  };
+function SetRow({ set, label, ph, last, ex, unit, isPR, current, onChange, onDone, onMenu }) {
+  const wRef = useRef(null), rRef = useRef(null);
+  const phW = ph.w != null ? wNum(ph.w, unit, 2) : null;
+  const fillLast = () => { if (last) onChange({ ...set, w: last.w ?? set.w, r: last.r ?? set.r, t: last.t ?? set.t }); };
   const toggle = () => {
     if (set.done) { onChange({ ...set, done: false }); return; }
     const next = { ...set };
-    if (next.w == null && prevW != null && ex.kind === 'weight') next.w = toKg(prevW, unit);
-    if (ex.kind === 'time') { if (next.t == null) next.t = prevT; if (next.t == null) return; }
-    else { if (next.r == null) next.r = repsPh; if (next.r == null) return; }
-    if (ex.kind === 'weight' && next.w == null) return;
+    if (next.w == null && ph.w != null) next.w = ph.w;
+    if (ex.kind === 'time') {
+      if (next.t == null) next.t = ph.t;
+      if (next.t == null) { rRef.current && rRef.current.focus(); return; }
+    } else {
+      if (next.r == null) next.r = ph.r;
+      if (next.r == null) { rRef.current && rRef.current.focus(); return; }
+    }
+    if (ex.kind === 'weight' && next.w == null) { wRef.current && wRef.current.focus(); return; }
     next.done = true;
     onChange(next);
     onDone(next);
   };
   return (
-    <div class={'set-row' + (set.done ? ' done' : '') + (set.type !== 'n' ? ' t-' + set.type : '')}>
+    <div class={'set-row' + (set.done ? ' done' : '') + (current ? ' cur' : '') + (set.type !== 'n' ? ' t-' + set.type : '')}>
       <button class="set-num num" onClick={onMenu} aria-label={`Set ${label} options`}>{label}</button>
-      <button class="set-prev num" onClick={fillPrev} disabled={!prev}>
-        {isPR ? <Icon name="medal" size={15} class="pr-ic" /> : null}{prevText}
+      <button class="set-prev num" onClick={fillLast} disabled={!last}>
+        {isPR ? <Icon name="medal" size={15} class="pr-ic" /> : null}{last ? setText(last, ex, unit) : '–'}
       </button>
-      <NumInput label="Weight" value={set.w == null ? null : wNum(set.w, unit, 2)} placeholder={ex.kind === 'weight' ? prevW : (prevW || '')}
+      <NumInput label="Weight" inputRef={wRef} value={set.w == null ? null : wNum(set.w, unit, 2)} placeholder={phW}
         onChange={(v) => onChange({ ...set, w: toKg(v, unit) })} />
       {ex.kind === 'time'
-        ? <NumInput label="Seconds" decimal={false} value={set.t} placeholder={prevT} onChange={(v) => onChange({ ...set, t: v })} />
-        : <NumInput label="Reps" decimal={false} value={set.r} placeholder={repsPh} onChange={(v) => onChange({ ...set, r: v })} />}
+        ? <NumInput label="Seconds" inputRef={rRef} decimal={false} value={set.t} placeholder={ph.t} onChange={(v) => onChange({ ...set, t: v })} />
+        : <NumInput label="Reps" inputRef={rRef} decimal={false} value={set.r} placeholder={ph.r} onChange={(v) => onChange({ ...set, r: v })} />}
       <button class={'set-check' + (set.done ? ' on' : '')} aria-pressed={set.done} aria-label={set.done ? 'Mark set not done' : 'Mark set done'} onClick={toggle}>
         <Icon name="check" size={20} stroke={2.6} />
       </button>
@@ -131,27 +176,17 @@ function SetRow({ set, label, prev, ex, unit, target, isPR, onChange, onDone, on
 }
 
 // ---------- one exercise block ----------
-function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, formula, mode, incr, onChange, onRemove, onMove, onReplace, onSetDone }) {
-  const work = prev ? prev.sets : [];
+function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formula, mode, onChange, onRemove, onMove, onReplace, onSetDone }) {
+  const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
   let normal = 0;
   const labels = entry.sets.map((s) => (s.type === 'n' ? String(++normal) : TYPE_LABEL[s.type]));
-
-  // double progression: every work set reached the top of the rep range last time
-  let suggest = null;
-  if (ex.kind === 'weight' && entry.target && entry.target.max && work.length) {
-    const top = Math.max(...work.map((s) => s.w || 0));
-    const topSets = work.filter((s) => s.type !== 'w' && s.w === top);
-    if (top > 0 && topSets.length && topSets.every((s) => (s.r || 0) >= entry.target.max)) {
-      const next = wNum(top, unit, 2) + incr;
-      if (!entry.sets.some((s) => s.w != null && wNum(s.w, unit, 2) >= next)) suggest = next;
-    }
-  }
+  const phs = placeholders(entry, work, targets);
+  const lastFor = [];
+  { let k = 0; for (const s of entry.sets) lastFor.push(s.type === 'w' ? null : work[k++] || null); }
+  const current = entry.sets.findIndex((s) => !s.done);
 
   const setSet = (i, ns) => onChange({ ...entry, sets: entry.sets.map((s, j) => (j === i ? ns : s)) });
-  const addSet = () => {
-    const last = entry.sets[entry.sets.length - 1];
-    onChange({ ...entry, sets: [...entry.sets, newSet({ w: last ? last.w : null, type: last && last.type === 'w' ? 'n' : 'n' })] });
-  };
+  const addSet = () => onChange({ ...entry, sets: [...entry.sets, newSet()] });
   const setMenu = (i) => {
     openSheet((close) => (
       <div class="sheet-pad">
@@ -175,6 +210,7 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, formula, mode,
       <div class="sheet-pad">
         <h3 class="sheet-title">{ex.name}</h3>
         <div class="menu">
+          {hasPreview(ex.id) && <button class="menu-row" onClick={() => { close(); previewSheet(ex); }}><Icon name="play" size={20} /> How to do it</button>}
           <button class="menu-row" onClick={() => { close(); push('exercise', { id: ex.id }); }}><Icon name="progress" size={20} /> History and records</button>
           <button class="menu-row" onClick={() => { close(); onReplace(); }}><Icon name="swap" size={20} /> Replace exercise</button>
           <button class="menu-row" onClick={() => { close(); noteSheet(entry.note, (note) => onChange({ ...entry, note })); }}><Icon name="note" size={20} /> {entry.note ? 'Edit note' : 'Add note'}</button>
@@ -191,36 +227,40 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, formula, mode,
     ));
   };
 
+  const range = entry.target && entry.target.max
+    ? `${entry.target.min && entry.target.min !== entry.target.max ? entry.target.min + '–' : ''}${entry.target.max} reps`
+    : null;
   const wHead = ex.kind === 'weight' ? unit : `+${unit}`;
   const rHead = ex.kind === 'time' ? 'Sec' : 'Reps';
   return (
     <section class="ex-block">
       <div class="ex-head">
+        <ExThumb ex={ex} onClick={() => previewSheet(ex)} />
         <button class="ex-name" onClick={() => push('exercise', { id: ex.id })}>
           <span>{ex.name}</span>
-          <span class="muted small">{entry.target && entry.target.max ? `${entry.target.min && entry.target.min !== entry.target.max ? entry.target.min + '–' : ''}${entry.target.max} reps` : musclesText(ex)}</span>
+          <span class="muted small">{range || musclesText(ex)}</span>
         </button>
         <button class="icon-btn" aria-label={`${ex.name} options`} onClick={menu}><Icon name="more" /></button>
       </div>
       {entry.note && <p class="ex-note">{entry.note}</p>}
-      {suggest != null && (
-        <button class="suggest" onClick={() => onChange({ ...entry, sets: entry.sets.map((s) => (s.type === 'w' || s.done ? s : { ...s, w: toKg(suggest, unit) })) })}>
-          <Icon name="arrowUp" size={16} stroke={2.4} />
-          <span>You hit {entry.target.max} reps on every set last time. Use {fmtNum(suggest, 2)} {unit}</span>
-        </button>
+      {targets && (
+        <div class={'target t-' + targets.kind}>
+          <Icon name={targets.kind === 'up' ? 'arrowUp' : 'flame'} size={17} stroke={2.2} />
+          <span><strong class="num">Target {targetSummary(targets, ex, unit)}</strong><span class="small">{targets.note}</span></span>
+        </div>
       )}
       <div class="set-head">
-        <span>Set</span><span>Previous</span><span>{wHead}</span><span>{rHead}</span><span class="sr">Done</span>
+        <span>Set</span><span>Last time</span><span>{wHead}</span><span>{rHead}</span><span class="sr">Done</span>
       </div>
       {entry.sets.map((s, i) => {
-        const p = work[i] || null;
         let isPR = false;
         if (s.done && s.type !== 'w' && best && ex.kind === 'weight') {
           const est = e1rm(s.w, s.r, formula) || 0;
           isPR = (s.w || 0) > best.topW + 1e-6 || est > best.e1rm + 1e-6;
         }
         return (
-          <SetRow key={s.id} set={s} label={labels[i]} prev={p} ex={ex} unit={unit} target={entry.target} isPR={isPR}
+          <SetRow key={s.id} set={s} label={labels[i]} ph={phs[i]} last={lastFor[i]} ex={ex} unit={unit} isPR={isPR}
+            current={mode === 'active' && i === current}
             onChange={(ns) => setSet(i, ns)} onDone={(ns) => onSetDone(entry, ns)} onMenu={() => setMenu(i)} />
         );
       })}
@@ -380,9 +420,10 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
         {w.exercises.map((e, i) => {
           const ex = exerciseOf(exercises, e.exId);
           const prev = lastSetsFor(others, e.exId);
+          const targets = isActive && s.settings.targets ? sessionTargets(prev, ex, e.target, toKg(incr, unit)) : null;
           return (
-            <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula} incr={incr}
-              prev={prev} best={best[e.exId]} mode={mode}
+            <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula}
+              prev={prev} best={best[e.exId]} targets={targets} mode={mode}
               onChange={(ne) => setEntries((list) => list.map((x) => (x.id === e.id ? ne : x)))}
               onRemove={() => setEntries((list) => list.filter((x) => x.id !== e.id))}
               onMove={(d) => setEntries((list) => { const a = [...list]; const j = i + d; [a[i], a[j]] = [a[j], a[i]]; return a; })}

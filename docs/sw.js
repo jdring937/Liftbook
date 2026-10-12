@@ -1,11 +1,22 @@
 // Liftbook offline cache. Bump comes from the build hash.
-const CACHE = 'liftbook-e2ea3e5c42';
+const CACHE = 'liftbook-52e2a0a611';
 const FILES = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil((async () => {
+    const keep = await caches.open(CACHE);
+    for (const k of await caches.keys()) {
+      if (k === CACHE) continue;
+      const old = await caches.open(k);
+      for (const req of await old.keys()) {
+        if (new URL(req.url).pathname.includes('/ex/')) { const r = await old.match(req); if (r) await keep.put(req, r); }
+      }
+      await caches.delete(k);
+    }
+    await self.clients.claim();
+  })());
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
@@ -19,5 +30,12 @@ self.addEventListener('fetch', (e) => {
     }).catch(() => caches.match('./index.html')));
     return;
   }
-  e.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
+  // cache-first; exercise photos and guides are cached the first time they are viewed
+  e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+    if (res.ok && new URL(req.url).pathname.includes('/ex/')) {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(req, copy));
+    }
+    return res;
+  })));
 });

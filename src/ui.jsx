@@ -203,29 +203,34 @@ export function Toggle({ on, onChange, label }) {
 }
 
 // Numeric text input that keeps what you type (e.g. "180.") while committing parsed numbers
-export function NumInput({ value, onChange, placeholder, decimal = true, class: cls = '', label, onEnter }) {
-  const [text, setText] = useState(value == null ? '' : String(value));
-  const focused = useRef(false);
-  useEffect(() => {
-    if (!focused.current) setText(value == null ? '' : String(value));
-  }, [value]);
+export function NumInput({ value, onChange, placeholder, decimal = true, class: cls = '', label, onEnter, inputRef }) {
+  // While focused the field shows exactly what was typed (e.g. "180."); otherwise it shows the stored value.
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState('');
+  const shown = editing ? text : value == null ? '' : String(value);
   return (
     <input
+      ref={inputRef}
       class={'num-in num ' + cls}
       type="text"
       inputMode={decimal ? 'decimal' : 'numeric'}
       enterkeyhint="done"
       aria-label={label}
       placeholder={placeholder == null ? '' : String(placeholder)}
-      value={text}
-      onFocus={(e) => { focused.current = true; setTimeout(() => { try { e.target.select(); } catch (x) { /* ignore */ } }, 0); }}
-      onBlur={() => { focused.current = false; setText(value == null ? '' : String(value)); }}
+      value={shown}
+      onFocus={(e) => {
+        setText(value == null ? '' : String(value));
+        setEditing(true);
+        setTimeout(() => { try { e.target.select(); } catch (x) { /* ignore */ } }, 0);
+      }}
+      onBlur={() => setEditing(false)}
       onKeyDown={(e) => { if (e.key === 'Enter') { e.target.blur(); onEnter && onEnter(); } }}
       onInput={(e) => {
         let t = e.target.value.replace(',', '.').replace(decimal ? /[^0-9.]/g : /[^0-9]/g, '');
         const parts = t.split('.');
         if (parts.length > 2) t = parts[0] + '.' + parts.slice(1).join('');
         setText(t);
+        setEditing(true);
         const n = t === '' || t === '.' ? null : parseFloat(t);
         onChange(n == null || isNaN(n) ? null : n);
       }}

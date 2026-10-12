@@ -9,6 +9,7 @@ import { openPicker, useExerciseList, musclesText, ExerciseForm } from './picker
 import { TemplateRow, templateSheet, begin } from './train.jsx';
 import { restSheet } from './workout.jsx';
 import { MUSCLE_FILTERS } from '../data/exercises.js';
+import { ExThumb } from '../components/preview.jsx';
 
 const mem = { seg: 'workouts', q: '', filter: null };
 
@@ -29,6 +30,7 @@ function ExerciseLibrary() {
       <div class="list">
         {list.map((ex) => (
           <button key={ex.id} class="lib-row" onClick={() => push('exercise', { id: ex.id })}>
+            <ExThumb ex={ex} size="sm" />
             <span class="pick-main">
               <span class="pick-name">{ex.name}{ex.custom && <span class="tag">Custom</span>}</span>
               <span class="muted small">{musclesText(ex)}</span>

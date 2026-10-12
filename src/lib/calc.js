@@ -134,6 +134,43 @@ export function lastSetsFor(workouts, exId, beforeT = Infinity) {
   return { t: bestW.start, sets };
 }
 
+// Targets for today's session from the last time this exercise was done.
+// With a rep range (double progression): once every top-weight set reached the top of the
+// range, add one increment and drop back to the bottom of the range; otherwise keep the
+// weight and add a rep to each set, capped at the top of the range.
+// Without a range: keep the weight and beat each set by a rep.
+export function sessionTargets(prev, ex, range, incKg) {
+  const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
+  if (!work.length) return null;
+  const min = range && range.min ? range.min : null;
+  const max = range && range.max ? range.max : null;
+  if (ex.kind === 'time') {
+    return { sets: work.map((s) => ({ w: s.w ?? null, t: (s.t || 0) + 5 })), kind: 'more', note: '5 seconds longer than last time' };
+  }
+  if (ex.kind === 'reps') {
+    return { sets: work.map((s) => ({ w: s.w ?? null, r: (s.r || 0) + 1 })), kind: 'more', note: 'One more rep per set than last time' };
+  }
+  const top = Math.max(...work.map((s) => s.w || 0));
+  const topSets = work.filter((s) => (s.w || 0) === top);
+  if (top > 0 && max && topSets.every((s) => (s.r || 0) >= max)) {
+    return {
+      sets: work.map((s) => ({ w: (s.w || 0) === top ? top + incKg : s.w, r: min || Math.max(1, max - 4) })),
+      kind: 'up',
+      note: `Heavier: you hit ${max} reps on every set last time`,
+    };
+  }
+  const sets = work.map((s) => {
+    let r = (s.r || 0) + 1;
+    if (max) r = Math.min(max, r);
+    if (min) r = Math.max(min, r);
+    return { w: s.w, r };
+  });
+  const same = sets.every((t, i) => t.r === work[i].r);
+  const jump = sets.some((t, i) => t.r - (work[i].r || 0) > 1);
+  const note = same ? 'Match last time' : jump ? `Work up to ${min}–${max} reps` : 'One more rep per set than last time';
+  return { sets, kind: same ? 'match' : 'more', note };
+}
+
 // Heaviest weight lifted for exactly N reps (only rep counts you have done)
 export function repRecords(history) {
   const best = {};

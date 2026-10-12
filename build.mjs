@@ -1,6 +1,6 @@
 // Builds docs/ (served by GitHub Pages): a self-contained index.html plus manifest, service worker and icons.
 import { build } from 'esbuild';
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, readdirSync, cpSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const out = 'docs';
@@ -77,7 +77,18 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil((async () => {
+    const keep = await caches.open(CACHE);
+    for (const k of await caches.keys()) {
+      if (k === CACHE) continue;
+      const old = await caches.open(k);
+      for (const req of await old.keys()) {
+        if (new URL(req.url).pathname.includes('/ex/')) { const r = await old.match(req); if (r) await keep.put(req, r); }
+      }
+      await caches.delete(k);
+    }
+    await self.clients.claim();
+  })());
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
@@ -91,12 +102,21 @@ self.addEventListener('fetch', (e) => {
     }).catch(() => caches.match('./index.html')));
     return;
   }
-  e.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
+  // cache-first; exercise photos and guides are cached the first time they are viewed
+  e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+    if (res.ok && new URL(req.url).pathname.includes('/ex/')) {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(req, copy));
+    }
+    return res;
+  })));
 });
 `);
 
 for (const f of readdirSync('icons')) copyFileSync(`icons/${f}`, `${out}/${f}`);
 copyFileSync('THIRD_PARTY_NOTICES.md', `${out}/THIRD_PARTY_NOTICES.md`);
+rmSync(`${out}/ex`, { recursive: true, force: true });
+cpSync('public/ex', `${out}/ex`, { recursive: true });
 writeFileSync(`${out}/.nojekyll`, '');
 
 console.log(`built ${out}/index.html ${(html.length / 1024).toFixed(0)} KB, cache ${version}`);

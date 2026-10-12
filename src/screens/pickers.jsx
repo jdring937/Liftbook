@@ -2,6 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { useStore, allExercises, saveCustomExercise } from '../store.js';
 import { MUSCLES, MUSCLE_NAME, MUSCLE_FILTERS, EQUIPMENT } from '../data/exercises.js';
 import { Icon, Chips, openSheet, toast } from '../ui.jsx';
+import { ExThumb } from '../components/preview.jsx';
 
 export function musclesText(ex) {
   return [...ex.primary, ...ex.secondary].slice(0, 3).map((m) => MUSCLE_NAME[m] || m).join(', ');
@@ -42,6 +43,7 @@ export function ExercisePicker({ close, onPick, multi = true, title = 'Add exerc
     const on = sel.includes(ex.id);
     return (
       <button key={ex.id} class={'pick-row' + (on ? ' on' : '')} onClick={() => toggle(ex.id)} aria-pressed={on}>
+        <ExThumb ex={ex} size="sm" />
         <span class="pick-main">
           <span class="pick-name">{ex.name}</span>
           <span class="muted small">{musclesText(ex)}</span>

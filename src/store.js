@@ -10,26 +10,16 @@ export const SCHEMA = 1;
 
 export const TEMPLATE_COLORS = ['red', 'blue', 'yellow', 'green', 'white'];
 
-function tpl(name, color, items) {
-  return {
-    id: uid(), name, color, note: '', createdAt: Date.now(),
-    items: items.map(([exId, sets = 3, min = 8, max = 12]) => ({ exId, sets, min, max, rest: null })),
-  };
-}
-
-// Starter workouts taken from the user's current library (the parts that were visible)
-function seedTemplates() {
-  return [
-    tpl('(W) Upper Push + Pull 1', 'blue', [
-      ['bench-press-dumbbell'], ['dumbbell-row'], ['incline-bench-press-dumbbell'],
-    ]),
-    tpl('(Th) Shoulders and Tris', 'green', [
-      ['tricep-rope-push-down-cable', 3, 10, 15], ['lateral-raise-cable', 3, 12, 15], ['shoulder-external-rotation-cable', 3, 12, 15],
-    ]),
-    tpl('(F) Arms and Back', 'red', [
-      ['seated-row-cable', 3, 10, 15], ['lat-pulldown-neutral-grip'], ['bicep-curl-dumbbell'], ['decline-crunch', 3, 15, 20],
-    ]),
-  ];
+// Workouts that early builds pre-loaded. Removed on load if they are still untouched.
+const OLD_SEEDS = {
+  '(W) Upper Push + Pull 1': ['bench-press-dumbbell', 'dumbbell-row', 'incline-bench-press-dumbbell'],
+  '(Th) Shoulders and Tris': ['tricep-rope-push-down-cable', 'lateral-raise-cable', 'shoulder-external-rotation-cable'],
+  '(F) Arms and Back': ['seated-row-cable', 'lat-pulldown-neutral-grip', 'bicep-curl-dumbbell', 'decline-crunch'],
+};
+function isUntouchedSeed(t, programs) {
+  const ids = OLD_SEEDS[t.name];
+  if (!ids || t.items.length !== ids.length || t.items.some((it, i) => it.exId !== ids[i])) return false;
+  return !programs.some((p) => p.days.includes(t.id));
 }
 
 export function defaultState() {
@@ -37,16 +27,16 @@ export function defaultState() {
     schema: SCHEMA,
     settings: {
       unit: 'lb', rest: 120, formula: 'brzycki', weekStart: 0, theme: 'system',
-      keepAwake: true, incLb: 5, incKg: 2.5, sound: true, lastBackup: null,
+      keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, lastBackup: null,
     },
     custom: {},
-    templates: seedTemplates(),
+    templates: [],
     programs: [],
     activeProgram: null,
     workouts: [],
     active: null,
     rest: null,
-    meta: { created: Date.now(), seeded: true },
+    meta: { created: Date.now(), seedCleaned: true },
   };
 }
 
@@ -103,6 +93,10 @@ async function idbSet(key, val) {
 
 function migrate(s) {
   const d = defaultState();
+  if (s.meta && s.meta.seeded && !s.meta.seedCleaned) {
+    const programs = s.programs || [];
+    s = { ...s, templates: (s.templates || []).filter((t) => !isUntouchedSeed(t, programs)), meta: { ...s.meta, seedCleaned: true } };
+  }
   return {
     ...d, ...s,
     settings: { ...d.settings, ...(s.settings || {}) },
@@ -123,7 +117,7 @@ export async function loadState() {
     try { const raw = localStorage.getItem(LS_KEY); if (raw) s = JSON.parse(raw); } catch (e) { /* ignore */ }
   }
   state = s ? migrate(s) : defaultState();
-  if (!s) saveNow();
+  saveNow();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) { /* ignore */ }
   return state;
 }

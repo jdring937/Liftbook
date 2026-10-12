@@ -79,7 +79,10 @@ export function SettingsScreen() {
             <Row label="Keep screen on during workouts">
               <Toggle on={st.keepAwake} onChange={(v) => setSettings({ keepAwake: v })} label="Keep screen on" />
             </Row>
-            <Row label="Weight increase suggestion" sub="Offered when you hit the top of your rep range">
+            <Row label="Session targets" sub="Aim for each set based on your last session">
+              <Toggle on={st.targets} onChange={(v) => setSettings({ targets: v })} label="Session targets" />
+            </Row>
+            <Row label="Weight jump in targets" sub="Added once you hit the top of your rep range">
               <Seg options={st.unit === 'lb' ? [[2.5, '2.5'], [5, '5'], [10, '10']] : [[1, '1'], [2.5, '2.5'], [5, '5']]}
                 value={st.unit === 'lb' ? st.incLb : st.incKg} onChange={(v) => setSettings(st.unit === 'lb' ? { incLb: v } : { incKg: v })} />
             </Row>
