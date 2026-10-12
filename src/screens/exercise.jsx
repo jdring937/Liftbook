@@ -6,7 +6,7 @@ import { fmtW, fmtNum, fmtDateShort, fmtDateYear, fromKg, plural, wNum, fmtSecs 
 import { Icon, Header, Chips, pop, openSheet, confirmSheet, toast, Empty } from '../ui.jsx';
 import { LineChart } from '../components/charts.jsx';
 import { ExerciseForm } from './pickers.jsx';
-import { hasPreview, ExFrames, ExGuide } from '../components/preview.jsx';
+import { hasPreview, hasPhotos, ExVisual, ExGuide } from '../components/preview.jsx';
 
 const mem = { range: 'All' };
 
@@ -78,11 +78,13 @@ export function ExerciseScreen({ id }) {
       <div class="pad-16 stack-16">
         {hasPreview(id) && (
           <section class="panel">
-            <ExFrames id={id} />
-            <details class="how" open={!all.length}>
-              <summary>How to do it</summary>
-              <ExGuide id={id} />
-            </details>
+            <ExVisual ex={ex} />
+            {hasPhotos(id) && (
+              <details class="how" open={!all.length}>
+                <summary>How to do it</summary>
+                <ExGuide id={id} />
+              </details>
+            )}
           </section>
         )}
         {!all.length ? (

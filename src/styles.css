@@ -579,3 +579,18 @@ html.covered body { overflow: hidden; }
 .how summary::after { content: ''; width: 8px; height: 8px; border-right: 2px solid var(--text-3); border-bottom: 2px solid var(--text-3); transform: rotate(45deg); margin: -4px 0 0 4px; transition: transform 0.15s; }
 .how[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
 .how .guide { margin-top: 6px; }
+
+/* ---------- animated figures ---------- */
+:root {
+  --anim-body: #aeb6bc; --anim-far: #6c757c; --anim-hot: #ef5f67; --anim-hot-far: #9a3c43;
+  --anim-prop: #353c43; --anim-steel: #8d979e; --anim-steel-dark: #5d666d;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme='dark']) { --anim-body: #6f787e; --anim-far: #aab1b6; --anim-hot: #d3424d; --anim-hot-far: #eba5aa; --anim-prop: #d5d9d6; --anim-steel: #7c858b; --anim-steel-dark: #4c545a; } }
+:root[data-theme='light'] { --anim-body: #6f787e; --anim-far: #aab1b6; --anim-hot: #d3424d; --anim-hot-far: #eba5aa; --anim-prop: #d5d9d6; --anim-steel: #7c858b; --anim-steel-dark: #4c545a; }
+.move-anim { width: 100%; height: auto; display: block; aspect-ratio: 4 / 3; background: var(--surface-2); border-radius: 14px; }
+
+.ex-visual { display: flex; flex-direction: column; gap: 10px; }
+.ex-visual .move-anim { aspect-ratio: 4 / 3; }
+.ex-visual-toggle { display: flex; justify-content: center; }
+.anim-note { text-align: center; margin-top: -2px; }
+.thumb .move-anim { width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; }
