@@ -29,9 +29,8 @@ function Muscles({ s, exercises, bounds }) {
   const stats = useMemo(() => muscleStats(s.workouts, exercises, bounds), [s.workouts, exercises, bounds.start, bounds.end]);
   const levels = Object.fromEntries(MUSCLES.map(([k]) => [k, heatLevel(stats[k].sets / bounds.weeks)]));
   const total = MUSCLES.reduce((a, [k]) => a + stats[k].sets, 0);
-  const pick = (m) => setSel((x) => (x === m ? null : m));
-  const selStat = sel && stats[sel];
-  const topEx = selStat ? Object.entries(selStat.ex).sort((a, b) => b[1] - a[1]).slice(0, 3) : [];
+  const pick = (info) => setSel((x) => (x && x.key === info.key ? null : info));
+  const topFor = (m) => Object.entries(stats[m].ex).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const ranked = MUSCLES.map(([k, n]) => ({ k, n, ...stats[k] })).sort((a, b) => b.sets - a.sets);
 
   return (
@@ -45,8 +44,8 @@ function Muscles({ s, exercises, bounds }) {
       {view === 'body' && (
         <>
           <div class="bodies">
-            <figure><BodyFigure side="front" levels={levels} selected={sel} onSelect={pick} /><figcaption>Front</figcaption></figure>
-            <figure><BodyFigure side="back" levels={levels} selected={sel} onSelect={pick} /><figcaption>Back</figcaption></figure>
+            <figure><BodyFigure side="front" sex={s.settings.bodySex} levels={levels} selected={sel && sel.key} onSelect={pick} /><figcaption>Front</figcaption></figure>
+            <figure><BodyFigure side="back" sex={s.settings.bodySex} levels={levels} selected={sel && sel.key} onSelect={pick} /><figcaption>Back</figcaption></figure>
           </div>
           <div class="heat-legend" aria-label="Sets per week">
             <span class="small muted">Sets per week</span>
@@ -57,17 +56,26 @@ function Muscles({ s, exercises, bounds }) {
             </div>
           </div>
           <div class="muscle-detail">
-            {selStat ? (
+            {sel ? (
               <>
                 <div class="row-between">
-                  <strong class="md-name">{MUSCLE_NAME[sel]}</strong>
+                  <strong class="md-name">{sel.label}</strong>
                   <button class="icon-btn sm" aria-label="Clear selection" onClick={() => setSel(null)}><Icon name="x" size={18} /></button>
                 </div>
-                <p class="small">
-                  <strong class="num">{fmtNum(selStat.sets)}</strong> sets in this range, <strong class="num">{fmtNum(selStat.sets / bounds.weeks)}</strong> per week.
-                  {' '}{selStat.last ? `Last trained ${daysAgo(selStat.last).toLowerCase()}.` : 'Not trained yet.'}
-                </p>
-                {topEx.length > 0 && <p class="small muted">Mostly from {topEx.map(([id]) => exerciseOf(exercises, id).name).join(', ')}.</p>}
+                {sel.muscles.map((m) => {
+                  const st = stats[m];
+                  const top = topFor(m);
+                  return (
+                    <div key={m} class="md-line">
+                      {sel.muscles.length > 1 && <span class="md-sub">{MUSCLE_NAME[m]}</span>}
+                      <p class="small">
+                        <strong class="num">{fmtNum(st.sets)}</strong> sets in this range, <strong class="num">{fmtNum(st.sets / bounds.weeks)}</strong> per week.
+                        {' '}{st.last ? `Last trained ${daysAgo(st.last).toLowerCase()}.` : 'Not trained yet.'}
+                      </p>
+                      {top.length > 0 && <p class="small muted">Mostly from {top.map(([id]) => exerciseOf(exercises, id).name).join(', ')}.</p>}
+                    </div>
+                  );
+                })}
               </>
             ) : (
               <p class="small muted">Tap a muscle for its sets and when you last trained it.</p>

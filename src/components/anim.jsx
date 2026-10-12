@@ -90,10 +90,18 @@ const SEG = {
   biceps: 'ua', triceps: 'ua', frontDelts: 'ua', sideDelts: 'ua', rearDelts: 'ua',
   forearms: 'fa', quads: 'th', hamstrings: 'th', glutes: 'th', adductors: 'th', calves: 'sh',
 };
+// Three depths so overlapping parts stay readable: near limbs lightest, torso a step darker,
+// far limbs darkest. Worked muscles use the same three steps in red.
 function segColors(muscles) {
   const on = new Set((muscles || []).map((m) => SEG[m]).filter(Boolean));
-  return (seg, far) => (on.has(seg) ? (far ? 'var(--anim-hot-far)' : 'var(--anim-hot)') : far ? 'var(--anim-far)' : 'var(--anim-body)');
+  return (seg, far) => {
+    const hot = on.has(seg);
+    if (far) return hot ? 'var(--anim-hot-far)' : 'var(--anim-far)';
+    if (seg === 'torso') return hot ? 'var(--anim-hot-torso)' : 'var(--anim-torso)';
+    return hot ? 'var(--anim-hot)' : 'var(--anim-body)';
+  };
 }
+const EDGE = { stroke: 'var(--anim-edge)', 'stroke-width': 1.7, 'stroke-linejoin': 'round' };
 
 // ---------- equipment ----------
 function Props({ props, j }) {
@@ -184,7 +192,7 @@ function Implement({ kind, j, far, at }) {
 }
 
 function SideFigure({ j, color, implement, one, at }) {
-  const limb = (a, b, r1, r2, seg, far) => <path d={capsule(a, b, r1, r2)} fill={color(seg, far)} />;
+  const limb = (a, b, r1, r2, seg, far) => <path d={capsule(a, b, r1, r2)} fill={color(seg, far)} {...(far ? {} : EDGE)} />;
   const bar = implement === 'barbell' || implement === 'backbar' || implement === 'frontbar' || implement === 'hipbar';
   return (
     <g>
@@ -196,7 +204,7 @@ function SideFigure({ j, color, implement, one, at }) {
       {limb(j.an2, j.toe2, 3.6, 2.6, 'foot', true)}
       {!bar && !one && <Implement kind={implement} j={j} far at={at} />}
       {limb(j.hip, j.sho, 9.5, 11, 'torso')}
-      <circle cx={j.head[0]} cy={j.head[1]} r={LEN.head} fill="var(--anim-body)" />
+      <circle cx={j.head[0]} cy={j.head[1]} r={LEN.head} fill="var(--anim-torso)" {...EDGE} />
       {limb(j.hip, j.kn, 8.6, 6.2, 'th')}
       {limb(j.kn, j.an, 5.8, 4.2, 'sh')}
       {limb(j.an, j.toe, 3.8, 2.8, 'foot')}
@@ -217,12 +225,12 @@ function FrontFigure({ p, color, implement }) {
     const hip = [cx + side * 7, hipY];
     const kn = [hip[0] + side * Math.sin(rad(lg + 2)) * 38, hipY + Math.cos(rad(lg + 2)) * 38];
     const an = [kn[0] + side * Math.sin(rad(lg + 2)) * 39, kn[1] + Math.cos(rad(lg + 2)) * 39];
-    parts.push(<path key={'t' + side} d={capsule(hip, kn, 8.2, 6)} fill={color('th')} />);
-    parts.push(<path key={'s' + side} d={capsule(kn, an, 5.6, 4)} fill={color('sh')} />);
-    parts.push(<path key={'f' + side} d={capsule(an, [an[0] + side * 4, an[1] + 3], 3.8, 3)} fill={color('foot')} />);
+    parts.push(<path key={'t' + side} d={capsule(hip, kn, 8.2, 6)} fill={color('th')} {...EDGE} />);
+    parts.push(<path key={'s' + side} d={capsule(kn, an, 5.6, 4)} fill={color('sh')} {...EDGE} />);
+    parts.push(<path key={'f' + side} d={capsule(an, [an[0] + side * 4, an[1] + 3], 3.8, 3)} fill={color('foot')} {...EDGE} />);
   }
-  parts.push(<path key="torso" d={capsule([cx, hipY], [cx, shoY + 4], 13, 17)} fill={color('torso')} />);
-  parts.push(<circle key="head" cx={cx} cy={shoY - 14} r={LEN.head} fill="var(--anim-body)" />);
+  parts.push(<path key="torso" d={capsule([cx, hipY], [cx, shoY + 4], 13, 17)} fill={color('torso')} {...EDGE} />);
+  parts.push(<circle key="head" cx={cx} cy={shoY - 14} r={LEN.head} fill="var(--anim-torso)" {...EDGE} />);
   const hands = [];
   for (const side of [-1, 1]) {
     const sho = [cx + side * 17, shoY + 2];
@@ -231,8 +239,8 @@ function FrontFigure({ p, color, implement }) {
     const b = a + (side === 1 && p.el2 != null ? p.el2 : p.el || 0);
     const wr = [el[0] + side * Math.sin(rad(b)) * LEN.fa, el[1] + Math.cos(rad(b)) * LEN.fa];
     hands.push(wr);
-    parts.push(<path key={'u' + side} d={capsule(sho, el, 5.8, 4.8)} fill={color('ua')} />);
-    parts.push(<path key={'f' + side} d={capsule(el, wr, 4.6, 3.6)} fill={color('fa')} />);
+    parts.push(<path key={'u' + side} d={capsule(sho, el, 5.8, 4.8)} fill={color('ua')} {...EDGE} />);
+    parts.push(<path key={'f' + side} d={capsule(el, wr, 4.6, 3.6)} fill={color('fa')} {...EDGE} />);
     if (implement === 'dumbbell') parts.push(<rect key={'d' + side} x={wr[0] - 3} y={wr[1] - 9} width="6" height="18" rx="2.5" fill="var(--anim-steel-dark)" />);
     if (implement === 'handle' || implement === 'cables') parts.push(<rect key={'h' + side} x={wr[0] - 2} y={wr[1] - 6} width="4" height="12" rx="2" fill="var(--anim-steel)" />);
   }
@@ -265,15 +273,15 @@ function TopFigure({ p, color, implement, props, one }) {
     const f = !moving ? hz : hz + rad(p.el || 0);
     const fl = moving ? 1 : 0.2;
     const wr = [el[0] + side * Math.cos(f) * LEN.fa * fl, el[1] - Math.sin(f) * LEN.fa * fl];
-    parts.push(<path key={'u' + side} d={capsule(R(sho), R(el), 6, 5)} fill={color('ua', !moving)} />);
-    parts.push(<path key={'f' + side} d={capsule(R(el), R(wr), 4.8, 3.8)} fill={color('fa', !moving)} />);
+    parts.push(<path key={'u' + side} d={capsule(R(sho), R(el), 6, 5)} fill={color('ua', !moving)} {...EDGE} />);
+    parts.push(<path key={'f' + side} d={capsule(R(el), R(wr), 4.8, 3.8)} fill={color('fa', !moving)} {...EDGE} />);
     if (moving) hands.push(R(wr));
   }
-  parts.push(<ellipse key="torso" cx={cx} cy={cy} rx="27" ry="13" fill={color('torso')} transform={`rotate(${p.rot || 0} ${cx} ${cy})`} />);
+  parts.push(<ellipse key="torso" cx={cx} cy={cy} rx="27" ry="13" fill={color('torso')} {...EDGE} transform={`rotate(${p.rot || 0} ${cx} ${cy})`} />);
   const hc = R([0, -6]);
-  parts.push(<circle key="head" cx={hc[0]} cy={hc[1]} r="10.5" fill="var(--anim-body)" stroke="var(--surface-2)" stroke-width="2" />);
+  parts.push(<circle key="head" cx={hc[0]} cy={hc[1]} r="10.5" fill="var(--anim-body)" {...EDGE} />);
   const nose = R([0, -17]);
-  parts.push(<circle key="nose" cx={nose[0]} cy={nose[1]} r="2.8" fill="var(--anim-body)" />);
+  parts.push(<circle key="nose" cx={nose[0]} cy={nose[1]} r="2.8" fill="var(--anim-body)" {...EDGE} />);
   hands.forEach((h, i) => {
     if (implement === 'dumbbell') parts.push(<rect key={'d' + i} x={h[0] - 8} y={h[1] - 3.5} width="16" height="7" rx="3" fill="var(--anim-steel-dark)" />);
     if (implement === 'handle' || implement === 'rope') parts.push(<circle key={'h' + i} cx={h[0]} cy={h[1]} r="3.5" fill="var(--anim-steel)" />);

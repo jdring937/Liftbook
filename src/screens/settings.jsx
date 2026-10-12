@@ -95,6 +95,9 @@ export function SettingsScreen() {
             <Row label="1RM formula" sub={st.formula === 'epley' ? 'weight × (1 + reps ÷ 30)' : 'weight × 36 ÷ (37 − reps)'}>
               <Seg options={[['brzycki', 'Brzycki'], ['epley', 'Epley']]} value={st.formula} onChange={(v) => setSettings({ formula: v })} />
             </Row>
+            <Row label="Muscle map body">
+              <Seg options={[['male', 'Male'], ['female', 'Female']]} value={st.bodySex || 'male'} onChange={(v) => setSettings({ bodySex: v })} />
+            </Row>
             <Row label="Week starts on">
               <Seg options={[[0, 'Sun'], [1, 'Mon']]} value={st.weekStart} onChange={(v) => setSettings({ weekStart: v })} />
             </Row>

@@ -27,7 +27,7 @@ export function defaultState() {
     schema: SCHEMA,
     settings: {
       unit: 'lb', rest: 120, formula: 'brzycki', weekStart: 0, theme: 'system',
-      keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, lastBackup: null,
+      keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, bodySex: 'male', lastBackup: null,
     },
     custom: {},
     templates: [],

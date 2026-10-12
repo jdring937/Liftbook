@@ -50,12 +50,12 @@ export function ExFrames({ id }) {
 
 const pref = { view: 'move' };
 // Animation first when there is one, photos one tap away
-export function ExVisual({ ex }) {
+export function ExVisual({ ex, compact = false }) {
   const both = hasMove(ex.id) && hasPhotos(ex.id);
   const [view, setView] = useState(hasMove(ex.id) ? pref.view : 'photo');
   const v = !hasMove(ex.id) ? 'photo' : !hasPhotos(ex.id) ? 'move' : view;
   return (
-    <div class="ex-visual">
+    <div class={'ex-visual' + (compact ? ' compact' : '')}>
       {v === 'move'
         ? <MoveAnim move={MOVES[ex.id]} muscles={ex.primary} label={`${ex.name} animation`} />
         : <ExFrames id={ex.id} />}
@@ -64,7 +64,7 @@ export function ExVisual({ ex }) {
           <Seg options={[['move', 'Animation'], ['photo', 'Photos']]} value={v} onChange={(x) => { pref.view = x; setView(x); }} />
         </div>
       )}
-      {v === 'move' && <p class="small muted anim-note">Highlighted: the main muscles worked.</p>}
+      {v === 'move' && !compact && <p class="small muted anim-note">Highlighted: the main muscles worked.</p>}
     </div>
   );
 }
