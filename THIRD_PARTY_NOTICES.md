@@ -129,3 +129,13 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 ```
+
+## Exercise photos and instructions
+
+https://github.com/yuhonas/free-exercise-db
+
+Photos (resized) and instruction text for exercises with a preview come from free-exercise-db, published under the Unlicense (public domain dedication). The dataset does not document where its photos originally came from; confirm their rights before any commercial use.
+
+```
+This is free and unencumbered software released into the public domain.
+```
