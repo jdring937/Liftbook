@@ -7,7 +7,10 @@ import { openSheet, Icon, push, Seg } from '../ui.jsx';
 // Previews: animated figures drawn by the app (data/moves.js), plus photos and instructions
 // from free-exercise-db (Unlicense) resized into ex/.
 export const hasPhotos = (id) => PREVIEW_IDS.has(id);
-export const hasMove = (id) => !!MOVES[id];
+// Animations are only shown once they have been checked against reference photos.
+// Hand-posed ones were often wrong, so none are listed until they are rebuilt and verified.
+const VERIFIED = new Set([]);
+export const hasMove = (id) => !!MOVES[id] && VERIFIED.has(id);
 export const hasPreview = (id) => hasPhotos(id) || hasMove(id);
 const src = (id, f) => `ex/${id}-${f}.jpg`;
 
@@ -48,7 +51,7 @@ export function ExFrames({ id }) {
   );
 }
 
-const pref = { view: 'move' };
+const pref = { view: 'photo' };
 // Animation first when there is one, photos one tap away
 export function ExVisual({ ex, compact = false }) {
   const both = hasMove(ex.id) && hasPhotos(ex.id);
