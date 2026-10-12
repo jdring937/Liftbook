@@ -6,6 +6,7 @@ import { MUSCLE_NAME } from '../data/exercises.js';
 import { Icon, Header, Toggle, Stepper, pop, openSheet, toast, plateVar } from '../ui.jsx';
 import { openPicker, ExerciseForm } from './pickers.jsx';
 import { ExThumb, previewSheet } from '../components/preview.jsx';
+import { Coverage } from '../components/coverage.jsx';
 
 // Import workouts pasted as text (built for workouts copied out of Boostcamp)
 const mem = { text: '' };
@@ -193,6 +194,17 @@ export function ImportScreen() {
   }
 
   const live = plan.filter((w) => w.rows.some((r) => !r.skip));
+  // coverage of what would be imported, using guessed muscles for exercises not created yet
+  const covEx = { ...exercises };
+  const covSessions = live.map((w) => ({
+    name: w.name,
+    items: w.rows.filter((r) => !r.skip).map((r) => {
+      if (r.exId) return { exId: r.exId, sets: r.sets };
+      const id = 'new:' + normName(r.src);
+      covEx[id] = { id, name: r.src, ...r.guess };
+      return { exId: id, sets: r.sets };
+    }),
+  }));
   const unsure = plan.reduce((a, w) => a + w.rows.filter((r) => !r.skip && (r.how === 'close' || !r.exId)).length, 0);
   return (
     <div class="screen-body">
@@ -229,6 +241,8 @@ export function ImportScreen() {
             </div>
           </section>
         ))}
+        <Coverage sessions={covSessions} exercises={covEx} sex={s.settings.bodySex}
+          note={live.length > 1 ? `If you do each of these ${live.length} workouts once a week.` : 'If you do this workout once a week.'} />
         {plan.length > 1 && (
           <section class="panel stack-12">
             <label class="row-between">

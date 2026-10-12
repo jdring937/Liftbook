@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useMemo, useState } from 'preact/hooks';
 import {
   useStore, allExercises, saveTemplate, deleteTemplate, saveProgram, deleteProgram, setActiveProgram, setProgramPos, programNext, TEMPLATE_COLORS,
 } from '../store.js';
@@ -10,6 +10,8 @@ import { TemplateRow, templateSheet, begin } from './train.jsx';
 import { restSheet } from './workout.jsx';
 import { MUSCLE_FILTERS } from '../data/exercises.js';
 import { ExThumb } from '../components/preview.jsx';
+import { Coverage } from '../components/coverage.jsx';
+import { programSessions, templateSessions } from '../lib/coverage.js';
 
 const mem = { seg: 'workouts', q: '', filter: null };
 
@@ -107,6 +109,8 @@ export function TemplateEditor({ id }) {
   const [t, setT] = useState(() => (existing ? JSON.parse(JSON.stringify(existing)) : { name: '', color: 'blue', note: '', items: [] }));
   const setItem = (i, patch) => setT((x) => ({ ...x, items: x.items.map((it, j) => (j === i ? { ...it, ...patch } : it)) }));
   const move = (i, d) => setT((x) => { const a = [...x.items]; [a[i], a[i + d]] = [a[i + d], a[i]]; return { ...x, items: a }; });
+  const [perWeek, setPerWeek] = useState(1);
+  const sessions = useMemo(() => templateSessions(t, perWeek), [t.items, perWeek]);
   const save = () => {
     if (!t.name.trim()) { toast('Give the workout a name'); return; }
     saveTemplate({ ...t, name: t.name.trim() });
@@ -165,6 +169,14 @@ export function TemplateEditor({ id }) {
         <button class="btn btn-soft full" onClick={() => openPicker((ids) => setT((x) => ({ ...x, items: [...x.items, ...ids.map((exId) => ({ exId, sets: 3, min: 8, max: 12, rest: null }))] })))}>
           <Icon name="plus" size={20} /> Add exercises
         </button>
+        {t.items.length > 0 && (
+          <Coverage sessions={sessions} exercises={exercises} sex={s.settings.bodySex}>
+            <div class="row-between cov-freq">
+              <span class="small muted">If you do this workout</span>
+              <Stepper value={perWeek} min={1} max={4} onChange={setPerWeek} fmt={(v) => (v === 1 ? 'once a week' : v === 2 ? 'twice a week' : `${v}× a week`)} label="Times per week" />
+            </div>
+          </Coverage>
+        )}
         {existing && (
           <>
             <button class="btn btn-primary full" onClick={() => { saveTemplate({ ...t, name: t.name.trim() || existing.name }); pop(); begin({ template: { ...t, id: existing.id } }); }}>
@@ -233,6 +245,7 @@ export function ProgramScreen({ id }) {
         <ol class="tpl-list">
           {p.days.map((tid, d) => <li key={d}><span>Day {d + 1}</span><span class="muted">{tName(tid)}</span></li>)}
         </ol>
+        <ProgramCoverage p={p} s={s} />
         {pos > 0 && <button class="btn full" onClick={async () => { if (await confirmSheet({ title: 'Restart from week 1?', confirm: 'Restart program' })) setProgramPos(p.id, 0); }}>Restart from week 1</button>}
         {isActive && <button class="btn btn-ghost full" onClick={() => setActiveProgram(null)}>Stop following this program</button>}
         <button class="btn btn-ghost danger full" onClick={async () => {
@@ -241,6 +254,13 @@ export function ProgramScreen({ id }) {
       </div>
     </div>
   );
+}
+
+function ProgramCoverage({ p, s }) {
+  const exercises = allExercises(s);
+  const sessions = useMemo(() => programSessions(p, s.templates), [p.days, s.templates]);
+  if (!sessions.length) return null;
+  return <Coverage sessions={sessions} exercises={exercises} sex={s.settings.bodySex} note={`One week of this program: ${plural(sessions.length, 'day')}.`} />;
 }
 
 function pickTemplate(templates, onPick) {
@@ -299,6 +319,7 @@ export function ProgramEditor({ id }) {
           <Icon name="plus" size={20} /> Add a day
         </button>
         {existing && <p class="small muted">Changing the days keeps your place in the program.</p>}
+        {p.days.length > 0 && <ProgramCoverage p={p} s={s} />}
       </div>
     </div>
   );

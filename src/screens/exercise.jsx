@@ -147,6 +147,7 @@ export function ExerciseScreen({ id }) {
                       <span class="small muted">{plural(h.setList.length, 'set')}</span>
                     </div>
                     <div class="sess-sets num">{h.setList.map((st, i) => <span key={i}>{setText(st, ex, unit)}</span>)}</div>
+                    {h.note && <p class="sess-note small">{h.note}</p>}
                   </div>
                 ))}
               </div>

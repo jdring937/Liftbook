@@ -4,6 +4,7 @@ import { exerciseOf, workoutSummary } from '../lib/calc.js';
 import { startOfWeek, addDays, startOfDay, daysAgo, fmtW, fmtTime, plural } from '../lib/util.js';
 import { Icon, push, openSheet, confirmSheet, toast, plateVar } from '../ui.jsx';
 import { unlockAudio } from './workout.jsx';
+import { MovedCard } from '../components/moved.jsx';
 
 export function begin(opts) {
   unlockAudio();
@@ -128,6 +129,7 @@ export function TrainScreen() {
       )}
 
       <WeekStrip workouts={s.workouts} weekStart={s.settings.weekStart} unit={s.settings.unit} exercises={exercises} />
+      {s.workouts.length > 0 && <MovedCard workouts={s.workouts} exercises={exercises} unit={s.settings.unit} weekStart={s.settings.weekStart} />}
 
       {program && (
         <section class="next-card" style={{ '--plate': plateVar(nextT && nextT.color) }}>

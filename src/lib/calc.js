@@ -115,9 +115,21 @@ export function exerciseHistory(workouts, exId, ex, formula) {
     if (!sets.length) continue;
     const st = entryStats(sets, ex, formula);
     if (!st.sets) continue;
-    out.push({ ...st, t: w.start, workoutId: w.id, workoutName: w.name, setList: sets.filter(isWork) });
+    const note = [...new Set(w.exercises.filter((e) => e.exId === exId && e.note && e.note.trim()).map((e) => e.note.trim()))].join(' / ');
+    out.push({ ...st, t: w.start, workoutId: w.id, workoutName: w.name, setList: sets.filter(isWork), note });
   }
   return out.sort((a, b) => a.t - b.t);
+}
+
+// Notes you wrote on an exercise in past sessions, newest first
+export function pastNotes(workouts, exId, beforeT = Infinity) {
+  const out = [];
+  for (const w of workouts) {
+    if (w.start >= beforeT) continue;
+    const notes = w.exercises.filter((e) => e.exId === exId && e.note && e.note.trim()).map((e) => e.note.trim());
+    if (notes.length) out.push({ t: w.start, workoutId: w.id, workoutName: w.name, note: [...new Set(notes)].join(' / ') });
+  }
+  return out.sort((a, b) => b.t - a.t);
 }
 
 // Most recent completed sets of an exercise (for the "Previous" column)

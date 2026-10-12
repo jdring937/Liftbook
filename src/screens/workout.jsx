@@ -3,8 +3,9 @@ import {
   useStore, getState, allExercises, updateActive, finishActive, discardActive, saveWorkout, deleteWorkout,
   newEntry, newSet, startRest, adjustRest, stopRest, saveTemplate, templateFromWorkout,
 } from '../store.js';
-import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets } from '../lib/calc.js';
-import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum, uid, plural, fmtSecs } from '../lib/util.js';
+import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets, pastNotes } from '../lib/calc.js';
+import { movedLine } from '../components/moved.jsx';
+import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum, uid, plural, fmtSecs, fmtDateShort, daysAgo } from '../lib/util.js';
 import { Icon, NumInput, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
 import { openPicker, musclesText } from './pickers.jsx';
 import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
@@ -176,7 +177,7 @@ function SetRow({ set, label, ph, last, ex, unit, isPR, current, onChange, onDon
 }
 
 // ---------- one exercise block ----------
-function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formula, mode, onChange, onRemove, onMove, onReplace, onSetDone }) {
+function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formula, mode, notes = [], onChange, onRemove, onMove, onReplace, onSetDone }) {
   const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
   let normal = 0;
   const labels = entry.sets.map((s) => (s.type === 'n' ? String(++normal) : TYPE_LABEL[s.type]));
@@ -214,6 +215,7 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
           <button class="menu-row" onClick={() => { close(); push('exercise', { id: ex.id }); }}><Icon name="progress" size={20} /> History and records</button>
           <button class="menu-row" onClick={() => { close(); onReplace(); }}><Icon name="swap" size={20} /> Replace exercise</button>
           <button class="menu-row" onClick={() => { close(); noteSheet(entry.note, (note) => onChange({ ...entry, note })); }}><Icon name="note" size={20} /> {entry.note ? 'Edit note' : 'Add note'}</button>
+          {notes.length > 0 && <button class="menu-row" onClick={() => { close(); notesSheet(ex, notes, unit); }}><Icon name="note" size={20} /> Past notes <span class="muted ml-auto">{notes.length}</span></button>}
           {mode === 'active' && (
             <button class="menu-row" onClick={() => { close(); restSheet(entry.rest, (rest) => onChange({ ...entry, rest })); }}>
               <Icon name="timer" size={20} /> Rest timer <span class="muted ml-auto">{entry.rest == null ? 'Default' : entry.rest ? fmtClock(entry.rest) : 'Off'}</span>
@@ -243,6 +245,13 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
         <button class="icon-btn" aria-label={`${ex.name} options`} onClick={menu}><Icon name="more" /></button>
       </div>
       {entry.note && <p class="ex-note">{entry.note}</p>}
+      {notes.length > 0 && notes[0].note !== entry.note && (
+        <button class="last-note" onClick={() => notesSheet(ex, notes, unit)}>
+          <Icon name="note" size={16} />
+          <span class="last-note-t"><span class="muted">{daysAgo(notes[0].t)}:</span> {notes[0].note}</span>
+          {notes.length > 1 && <span class="last-note-n small">+{notes.length - 1}</span>}
+        </button>
+      )}
       {targets && (
         <div class={'target t-' + targets.kind}>
           <Icon name={targets.kind === 'up' ? 'arrowUp' : 'flame'} size={17} stroke={2.2} />
@@ -267,6 +276,25 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
       <button class="add-set" onClick={addSet}><Icon name="plus" size={18} /> Add set</button>
     </section>
   );
+}
+
+function notesSheet(ex, notes) {
+  openSheet((close) => (
+    <div class="sheet-pad">
+      <div class="row-between">
+        <h3 class="sheet-title">Notes on {ex.name}</h3>
+        <button class="icon-btn" aria-label="Close" onClick={close}><Icon name="x" /></button>
+      </div>
+      <div class="notes-list">
+        {notes.map((n) => (
+          <div key={n.workoutId} class="notes-item">
+            <span class="small muted">{fmtDateShort(n.t)}, {n.workoutName}</span>
+            <p>{n.note}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  ));
 }
 
 function noteSheet(value, onSave) {
@@ -420,10 +448,11 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
         {w.exercises.map((e, i) => {
           const ex = exerciseOf(exercises, e.exId);
           const prev = lastSetsFor(others, e.exId);
+          const notes = pastNotes(others, e.exId, isActive ? Infinity : w.start);
           const targets = isActive && s.settings.targets ? sessionTargets(prev, ex, e.target, toKg(incr, unit)) : null;
           return (
             <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula}
-              prev={prev} best={best[e.exId]} targets={targets} mode={mode}
+              prev={prev} best={best[e.exId]} targets={targets} mode={mode} notes={notes}
               onChange={(ne) => setEntries((list) => list.map((x) => (x.id === e.id ? ne : x)))}
               onRemove={() => setEntries((list) => list.filter((x) => x.id !== e.id))}
               onMove={(d) => setEntries((list) => { const a = [...list]; const j = i + d; [a[i], a[j]] = [a[j], a[i]]; return a; })}
@@ -473,6 +502,7 @@ function Summary({ id, close }) {
         <div><span class="stat-v num">{fmtW(sum.vol, s.settings.unit)}</span><span class="stat-l">Volume</span></div>
         <div><span class="stat-v num">{sum.sets}</span><span class="stat-l">Sets</span></div>
       </div>
+      {movedLine(sum.vol, w.id) && <p class="moved-sum">You moved about <strong>{movedLine(sum.vol, w.id)}</strong>.</p>}
       {pr.count > 0 && (
         <div class="pr-list">
           <div class="pr-title"><Icon name="medal" size={20} class="pr-ic" /> {plural(pr.count, 'personal record')}</div>

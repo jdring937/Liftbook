@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useStore, allExercises, setSettings, exportJSON, importJSON, exportCSV, eraseAll, storageMode } from '../store.js';
 import { fmtDateYear, fmtClock, plural } from '../lib/util.js';
-import { Icon, Header, Seg, Toggle, pop, confirmSheet, toast } from '../ui.jsx';
+import { Icon, Header, Seg, Toggle, pop, push, confirmSheet, toast } from '../ui.jsx';
 import { restSheet } from './workout.jsx';
 
 async function shareOrDownload(text, filename, type) {
@@ -103,6 +103,15 @@ export function SettingsScreen() {
             </Row>
             <Row label="Appearance">
               <Seg options={[['system', 'Auto'], ['dark', 'Dark'], ['light', 'Light']]} value={st.theme} onChange={(v) => setSettings({ theme: v })} />
+            </Row>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="h-sec">The science</h2>
+          <div class="group">
+            <Row label="Research behind the recommendations" sub="Volume, rest, deloads, progression and more, with sources" onClick={() => push('evidence')}>
+              <Icon name="right" size={18} class="muted" />
             </Row>
           </div>
         </section>

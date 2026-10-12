@@ -646,3 +646,55 @@ button.pick-box { flex: none; }
 .imp-new { color: var(--blue); }
 .ti-note, input.ti-note { margin-top: 10px; width: 100%; min-height: 40px; padding: 6px 10px; font-size: 16px; background: var(--surface-2); }
 input.ti-note:placeholder-shown:not(:focus) { background: transparent; border: 1.5px dashed var(--surface-3); }
+
+/* ---------- weight moved ---------- */
+.moved { margin-top: 12px; background: var(--surface); border-radius: 18px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.moved-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.moved-l { font-size: 14px; font-weight: 650; color: var(--text-2); }
+.moved-periods { display: flex; gap: 2px; background: var(--surface-2); border-radius: 10px; padding: 2px; }
+.moved-periods button { height: 28px; padding: 0 9px; border-radius: 8px; font-size: 13px; font-weight: 640; color: var(--text-2); white-space: nowrap; }
+.moved-periods button.on { background: var(--surface-3); color: var(--text); }
+.moved-v { font-size: 32px; font-weight: 780; font-stretch: 112%; letter-spacing: -0.02em; margin-top: 6px; }
+.moved-cmp { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; text-align: left; font-size: 16px; color: var(--text-2); width: 100%; }
+.moved-cmp strong { color: var(--text); font-weight: 700; }
+.moved-more { flex: none; font-size: 13px; font-weight: 650; color: var(--blue); }
+.moved-sum { margin: -4px 0 14px; color: var(--text-2); }
+.moved-sum strong { color: var(--text); }
+.last-note { display: flex; align-items: flex-start; gap: 8px; width: calc(100% - 16px); margin: 0 8px 8px; padding: 8px 10px; border-radius: 10px; border: 1.5px dashed var(--surface-3); text-align: left; font-size: 14px; color: var(--text-2); }
+.last-note svg { flex: none; margin-top: 2px; }
+.last-note-t { flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.last-note-n { flex: none; color: var(--blue); font-weight: 650; }
+.notes-list { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.notes-item { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.notes-item p { margin-top: 4px; white-space: pre-wrap; }
+.sess-note { margin-top: 8px; color: var(--text-2); font-style: italic; }
+
+/* ---------- evidence ---------- */
+.why { display: inline-flex; align-items: center; gap: 4px; color: var(--blue); font-size: 14px; font-weight: 650; padding: 4px 0; }
+.ev-summary { line-height: 1.5; }
+.ev-app { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 15px; line-height: 1.45; }
+.ev-app strong { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 2px; }
+.ev-refs { margin-top: 14px; }
+.ev-refs ol { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.4; }
+.ev-refs a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--surface-3); text-underline-offset: 2px; word-break: break-word; }
+.ev-head { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 14px; min-height: 52px; font-weight: 650; text-align: left; }
+.ev-body { padding: 0 14px 16px; }
+
+/* ---------- coverage ---------- */
+.cov-title { font-size: 17px; font-weight: 720; }
+.findings { list-style: none; margin: 12px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.finding { display: flex; gap: 10px; align-items: flex-start; }
+.f-ic { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--text-2); margin-top: 1px; }
+.f-gap .f-ic { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+.f-low .f-ic, .f-balance .f-ic { background: color-mix(in srgb, var(--yellow) 20%, transparent); color: var(--yellow); }
+.f-high .f-ic { background: color-mix(in srgb, var(--blue) 18%, transparent); color: var(--blue); }
+.f-ok .f-ic { background: var(--green-soft); color: var(--green); }
+.f-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.f-text strong { font-size: 15px; font-weight: 680; }
+.f-text .why { font-size: 13px; padding: 0; }
+.band { font-weight: 650; white-space: nowrap; }
+.b-none { color: var(--red); } .b-low { color: var(--yellow); } .b-mod { color: var(--text-2); } .b-good { color: var(--green); } .b-high { color: var(--blue); }
+.cov .muscle-detail { margin-bottom: 4px; }
+
+.cov-freq { margin: 2px 0 6px; gap: 8px; }
+.cov-freq .stepper { flex: none; }
