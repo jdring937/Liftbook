@@ -10,7 +10,7 @@ A personal strength training log that runs as an iPhone Home Screen web app. It 
 
 ## Install on iPhone
 
-Open the GitHub Pages URL in Safari, tap Share, then Add to Home Screen. Open it once while online; after that it works offline.
+Open https://jdring937.github.io/Liftbook/ in Safari, tap Share, then Add to Home Screen. Open it once while online; after that it works offline.
 
 ## Develop
 
@@ -19,4 +19,8 @@ npm install
 node build.mjs
 ```
 
-The build writes a self-contained site to `docs/`, which GitHub Pages serves from the `main` branch. Commit `docs/` after each build to deploy.
+The build writes a self-contained site to `docs/`. GitHub Pages serves the `gh-pages` branch, which holds a copy of `docs/`. To deploy, commit the build on `main`, then publish it:
+
+```
+git subtree push --prefix docs origin gh-pages
+```
