@@ -7,10 +7,8 @@ import { openSheet, Icon, push, Seg } from '../ui.jsx';
 // Previews: animated figures drawn by the app (data/moves.js), plus photos and instructions
 // from free-exercise-db (Unlicense) resized into ex/.
 export const hasPhotos = (id) => PREVIEW_IDS.has(id);
-// Animations are only shown once they have been checked against reference photos.
-// Hand-posed ones were often wrong, so none are listed until they are rebuilt and verified.
-const VERIFIED = new Set([]);
-export const hasMove = (id) => !!MOVES[id] && VERIFIED.has(id);
+// Hand-posed animations are approximate, so photos show first and the animation is a tap away.
+export const hasMove = (id) => !!MOVES[id];
 export const hasPreview = (id) => hasPhotos(id) || hasMove(id);
 const src = (id, f) => `ex/${id}-${f}.jpg`;
 
