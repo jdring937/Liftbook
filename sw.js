@@ -1,5 +1,5 @@
 // Liftbook offline cache. Bump comes from the build hash.
-const CACHE = 'liftbook-09a32e0d74';
+const CACHE = 'liftbook-4aea2b5c6d';
 const FILES = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
