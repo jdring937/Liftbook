@@ -31,6 +31,21 @@ export function Insights({ s, exercises, max = 3, onMore = null }) {
   const isDismissed = (k, days) => dis[k] && now - dis[k] < days * DAY;
   const cards = [];
 
+  // pain flags from the last two weeks
+  const painIds = new Set();
+  for (const w of s.workouts) if (w.start > now - 14 * DAY) for (const e of w.exercises) if (e.pain != null) painIds.add(e.exId);
+  for (const id of painIds) {
+    const pc = painCheck(painHistory(s.workouts, id), now);
+    if (!pc || !(pc.over || pc.rising) || isDismissed('pain:' + id, 7)) continue;
+    const ex = exercises[id];
+    cards.push(
+      <Card key={'p' + id} kind="pain" icon="flame" title={`Pain on ${ex ? ex.name : 'an exercise'}`} onDismiss={() => dismiss('pain:' + id)}
+        actions={<><button class="link" onClick={() => push('exercise', { id })}>See history</button><Why id="pain" /></>}>
+        {pc.over ? `Last logged at ${pc.last.v}/10, above the 5/10 limit used in the pain-monitoring model.` : 'Pain is creeping up week to week.'} Consider easing the load or range, and see a clinician if it persists.
+      </Card>,
+    );
+  }
+
   if (ins.deloading) {
     cards.push(
       <Card key="deloading" kind="deload" icon="timer" title={`Deload week until ${fmtDate(s.settings.deloadUntil)}`}
@@ -65,20 +80,6 @@ export function Insights({ s, exercises, max = 3, onMore = null }) {
       <Card key={'s' + l.exId} kind="info" icon="info" title={`${l.name} has stalled`} onDismiss={() => dismiss('stall:' + l.exId)}
         actions={<><button class="link" onClick={() => push('exercise', { id: l.exId })}>See trend</button><Why id="variation" /></>}>
         No new best in {l.weeks} weeks. Trying a different rep range or a close variation for a few weeks is a common fix.
-      </Card>,
-    );
-  }
-  // pain flags from the last two weeks
-  const painIds = new Set();
-  for (const w of s.workouts) if (w.start > now - 14 * DAY) for (const e of w.exercises) if (e.pain != null) painIds.add(e.exId);
-  for (const id of painIds) {
-    const pc = painCheck(painHistory(s.workouts, id), now);
-    if (!pc || !(pc.over || pc.rising) || isDismissed('pain:' + id, 7)) continue;
-    const ex = exercises[id];
-    cards.push(
-      <Card key={'p' + id} kind="pain" icon="flame" title={`Pain on ${ex ? ex.name : 'an exercise'}`} onDismiss={() => dismiss('pain:' + id)}
-        actions={<><button class="link" onClick={() => push('exercise', { id })}>See history</button><Why id="pain" /></>}>
-        {pc.over ? `Last logged at ${pc.last.v}/10, above the 5/10 limit used in the pain-monitoring model.` : 'Pain is creeping up week to week.'} Consider easing the load or range, and see a clinician if it persists.
       </Card>,
     );
   }
