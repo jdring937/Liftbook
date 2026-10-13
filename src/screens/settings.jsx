@@ -3,9 +3,10 @@ import { useStore, allExercises, setSettings, exportJSON, importJSON, exportCSV,
 import { fmtDateYear, fmtClock, plural } from '../lib/util.js';
 import { Icon, Header, Seg, Toggle, pop, push, confirmSheet, toast } from '../ui.jsx';
 import { restSheet } from './workout.jsx';
+import { exportPhotosZip, importPhotosZip } from './photos.jsx';
 
 async function shareOrDownload(text, filename, type) {
-  const blob = new Blob([text], { type });
+  const blob = text instanceof Blob ? text : new Blob([text], { type });
   try {
     const file = new File([blob], filename, { type });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -134,6 +135,23 @@ export function SettingsScreen() {
             <Row label="Export sets as CSV" sub="For spreadsheets" onClick={csv}>
               <Icon name="share" size={20} class="muted" />
             </Row>
+            <Row label="Export progress photos" sub={s.photos.length ? `${plural(s.photos.length, 'photo')} as a .zip file` : 'No photos yet'} onClick={s.photos.length ? async () => {
+              toast('Preparing photos…');
+              const { blob, count } = await exportPhotosZip();
+              if (await shareOrDownload(blob, `liftbook-photos-${stamp}.zip`, 'application/zip')) toast(`Exported ${plural(count, 'photo')}`);
+            } : undefined}>
+              <Icon name="share" size={20} class="muted" />
+            </Row>
+            <label class="set-line tap">
+              <span class="set-line-l"><span>Import progress photos</span><span class="small muted">Pick a photos .zip you exported</span></span>
+              <span class="set-line-r"><Icon name="right" size={18} class="muted" /></span>
+              <input type="file" accept=".zip,application/zip" class="sr" onChange={async (e) => {
+                const f = e.target.files && e.target.files[0];
+                e.target.value = '';
+                if (!f) return;
+                try { const n = await importPhotosZip(f); toast(n ? `Imported ${plural(n, 'photo')}` : 'No new photos in that file'); } catch (err) { toast(err.message || 'That file could not be read'); }
+              }} />
+            </label>
             <Row label="Erase all data" onClick={async () => {
               if (await confirmSheet({ title: 'Erase everything?', body: 'All workouts, plans, custom exercises and settings are deleted from this phone. Export a backup first if you might want them.', confirm: 'Erase all data', danger: true })) {
                 eraseAll(); toast('All data erased'); pop();

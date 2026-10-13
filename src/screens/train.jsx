@@ -7,6 +7,7 @@ import { unlockAudio } from './workout.jsx';
 import { MovedCard } from '../components/moved.jsx';
 import { timeboxSheet, useEstimate, minText } from '../components/timebox.jsx';
 import { Insights } from '../components/insights.jsx';
+import { GoalsSummary } from './goals.jsx';
 
 export function begin(opts) {
   unlockAudio();
@@ -165,6 +166,8 @@ export function TrainScreen() {
           )}
         </section>
       )}
+
+      <GoalsSummary s={s} exercises={exercises} />
 
       <div class="sec-head">
         <h2 class="h-sec">Your workouts</h2>

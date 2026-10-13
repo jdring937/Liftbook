@@ -8,9 +8,11 @@ import { fmtNum, compact, fmtDateShort, fmtMonthShort, daysAgo, fmtW, wNum, plur
 import { Icon, Chips, Seg, push, openSheet, Empty } from '../ui.jsx';
 import { BarChart, Radar, Sparkline } from '../components/charts.jsx';
 import { BodyFigure } from '../components/body.jsx';
+import { GoalsPanel } from './goals.jsx';
+import { Insights } from '../components/insights.jsx';
 
 // remembers choices while the app is open
-const mem = { seg: 'muscles', range: '30D', view: 'body', metric: 'volume', group: 'week' };
+const mem = { seg: null, range: '30D', view: 'body', metric: 'volume', group: 'week' };
 
 function muscleInfo() {
   openSheet((close) => (
@@ -201,14 +203,15 @@ function ExerciseList({ s, exercises, bounds }) {
 export function ProgressScreen() {
   const s = useStore();
   const exercises = allExercises(s);
-  const [seg, setSeg] = useState(mem.seg);
+  const [seg, setSeg] = useState(mem.seg || (s.goals.length ? 'goals' : 'muscles'));
   const [range, setRange] = useState(mem.range);
   const bounds = useMemo(() => rangeBounds(range, s.workouts), [range, s.workouts]);
   return (
     <div class="page">
       <div class="page-head"><h1 class="h-page">Progress</h1></div>
-      <Seg options={[['muscles', 'Muscles'], ['trends', 'Trends'], ['exercises', 'Exercises']]} value={seg} onChange={(v) => { mem.seg = v; setSeg(v); }} />
-      <Chips options={RANGES.map(([k]) => [k, k])} value={range} onChange={(v) => { mem.range = v; setRange(v); }} class="range-chips" />
+      <Seg options={[['goals', 'Goals'], ['muscles', 'Muscles'], ['trends', 'Trends'], ['exercises', 'Exercises']]} value={seg} onChange={(v) => { mem.seg = v; setSeg(v); }} />
+      {seg !== 'goals' && <Chips options={RANGES.map(([k]) => [k, k])} value={range} onChange={(v) => { mem.range = v; setRange(v); }} class="range-chips" />}
+      {seg === 'goals' && <div class="mt-16"><Insights s={s} exercises={exercises} max={4} /><GoalsPanel s={s} exercises={exercises} /></div>}
       {seg === 'muscles' && <Muscles s={s} exercises={exercises} bounds={bounds} />}
       {seg === 'trends' && <Trends s={s} exercises={exercises} bounds={bounds} rangeKey={range} />}
       {seg === 'exercises' && <ExerciseList s={s} exercises={exercises} bounds={bounds} />}

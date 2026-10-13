@@ -11,6 +11,9 @@ import { ExerciseScreen } from './screens/exercise.jsx';
 import { SettingsScreen } from './screens/settings.jsx';
 import { ImportScreen } from './screens/importer.jsx';
 import { EvidenceScreen } from './components/why.jsx';
+import { BodyScreen } from './screens/body.jsx';
+import { GoalScreen, GoalsScreen } from './screens/goals.jsx';
+import { CameraScreen, CompareScreen } from './screens/photos.jsx';
 import { fmtClock } from './lib/util.js';
 import { useState } from 'preact/hooks';
 
@@ -18,6 +21,7 @@ const TABS = [
   ['train', 'Train', 'train'],
   ['history', 'History', 'history'],
   ['progress', 'Progress', 'progress'],
+  ['body', 'Body', 'body'],
   ['plans', 'Plans', 'plans'],
 ];
 
@@ -33,6 +37,10 @@ function Screen({ s }) {
     case 'settings': return <SettingsScreen />;
     case 'import': return <ImportScreen />;
     case 'evidence': return <EvidenceScreen />;
+    case 'goal': return <GoalScreen id={p.id} />;
+    case 'goals': return <GoalsScreen />;
+    case 'camera': return <CameraScreen />;
+    case 'compare': return <CompareScreen after={p.after} before={p.before} />;
     default: return null;
   }
 }
@@ -77,6 +85,7 @@ function App() {
         {u.tab === 'train' && <TrainScreen />}
         {u.tab === 'history' && <HistoryScreen />}
         {u.tab === 'progress' && <ProgressScreen />}
+        {u.tab === 'body' && <BodyScreen />}
         {u.tab === 'plans' && <PlansScreen />}
       </main>
       {showMini && !covered && <MiniBar active={s.active} />}
