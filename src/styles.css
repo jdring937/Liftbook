@@ -698,3 +698,51 @@ input.ti-note:placeholder-shown:not(:focus) { background: transparent; border: 1
 
 .cov-freq { margin: 2px 0 6px; gap: 8px; }
 .cov-freq .stepper { flex: none; }
+
+/* ---------- fit to time ---------- */
+.tpl-est { display: flex; align-items: center; gap: 6px; margin: -8px 0 10px; }
+.tb-budget { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
+.tb-list { list-style: none; margin: 0; padding: 0; background: var(--surface-2); border-radius: 14px; }
+.tb-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 12px; }
+.tb-row + .tb-row { border-top: 1px solid var(--line); }
+.tb-name { font-weight: 620; min-width: 0; }
+.tb-what { flex: none; color: var(--text-3); text-align: right; }
+.tb-row.touched .tb-what { color: var(--yellow); font-weight: 650; }
+.tb-row.dropped .tb-name { text-decoration: line-through; color: var(--text-3); }
+.tb-row.dropped .tb-what { color: var(--red); }
+.tb-est { margin: 12px 0 6px; }
+.tb-est.warn { color: var(--yellow); }
+.tb-ok { padding: 12px; border-radius: 12px; background: var(--green-soft); color: var(--green); font-weight: 600; }
+.next-fit { align-self: center; margin-top: 4px; }
+
+/* ---------- insights, deload, pain ---------- */
+.insights { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.insight { background: var(--surface); border-radius: 16px; padding: 12px 12px 12px 14px; border-left: 4px solid var(--text-3); }
+.insight-top { display: flex; align-items: center; gap: 8px; }
+.insight-ic { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); }
+.insight-title { flex: 1; font-size: 16px; font-weight: 700; }
+.insight-body { margin-top: 6px; color: var(--text-2); line-height: 1.45; }
+.insight-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+.i-warn { border-left-color: var(--yellow); } .i-warn .insight-ic { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 18%, transparent); }
+.i-info { border-left-color: var(--blue); } .i-info .insight-ic { color: var(--blue); background: color-mix(in srgb, var(--blue) 16%, transparent); }
+.i-deload { border-left-color: var(--green); } .i-deload .insight-ic { color: var(--green); background: var(--green-soft); }
+.i-pain { border-left-color: var(--red); } .i-pain .insight-ic { color: var(--red); background: color-mix(in srgb, var(--red) 16%, transparent); }
+.target.t-deload { background: var(--green-soft); }
+.target.t-deload svg { color: var(--green); }
+.pain-pill { margin: 0 8px 8px; padding: 5px 10px; border-radius: 999px; font-size: 13px; font-weight: 650; }
+.pain-pill.lo { background: var(--green-soft); color: var(--green); }
+.pain-pill.mid { background: color-mix(in srgb, var(--yellow) 18%, transparent); color: var(--yellow); }
+.pain-pill.hi { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+.pain-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.pain-n { height: 48px; border-radius: 12px; background: var(--surface-2); font-weight: 750; font-size: 18px; font-variant-numeric: tabular-nums; border-bottom: 3px solid transparent; }
+.pain-n.lo { border-bottom-color: var(--green); } .pain-n.mid { border-bottom-color: var(--yellow); } .pain-n.hi { border-bottom-color: var(--red); }
+.pain-n.on { background: var(--text); color: var(--bg); }
+
+.trend-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--surface); border-left: 4px solid var(--text-3); font-size: 15px; }
+.trend-line.t-up { border-left-color: var(--green); } .trend-line.t-down { border-left-color: var(--yellow); }
+.m0 { margin: 0; }
+.pain-last { font-size: 22px; font-weight: 760; }
+.pain-checks { list-style: none; padding: 0; margin: 10px 0 8px; display: flex; flex-direction: column; gap: 6px; }
+.pain-checks li { padding-left: 22px; position: relative; }
+.pain-checks li::before { content: ''; position: absolute; left: 4px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--text-3); }
+.pain-checks li.good::before { background: var(--green); } .pain-checks li.bad::before { background: var(--red); } .pain-checks li.ask::before { background: var(--surface-3); }

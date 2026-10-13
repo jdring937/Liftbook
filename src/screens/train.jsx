@@ -5,6 +5,8 @@ import { startOfWeek, addDays, startOfDay, daysAgo, fmtW, fmtTime, plural } from
 import { Icon, push, openSheet, confirmSheet, toast, plateVar } from '../ui.jsx';
 import { unlockAudio } from './workout.jsx';
 import { MovedCard } from '../components/moved.jsx';
+import { timeboxSheet, useEstimate, minText } from '../components/timebox.jsx';
+import { Insights } from '../components/insights.jsx';
 
 export function begin(opts) {
   unlockAudio();
@@ -51,9 +53,11 @@ export function templateSheet(t) {
 function TemplateSheet({ t, close }) {
   const s = useStore();
   const exercises = allExercises(s);
+  const { sec } = useEstimate(t.items);
   return (
     <div class="sheet-pad">
       <h3 class="sheet-title">{t.name}</h3>
+      {t.items.length > 0 && <p class="small muted tpl-est"><Icon name="timer" size={15} /> About {minText(sec)}</p>}
       <ol class="tpl-list">
         {t.items.map((i, k) => (
           <li key={k}>
@@ -64,6 +68,7 @@ function TemplateSheet({ t, close }) {
       </ol>
       <div class="stack-8">
         <button class="btn btn-primary" onClick={() => { close(); begin({ template: t }); }}><Icon name="play" size={18} fill="currentColor" stroke={0} /> Start workout</button>
+        {t.items.length > 0 && <button class="btn" onClick={() => { close(); timeboxSheet(t, (tt) => begin({ template: tt })); }}><Icon name="timer" size={18} /> Short on time? Fit it in</button>}
         <button class="btn" onClick={() => { close(); push('template', { id: t.id }); }}>Edit</button>
         <button class="btn" onClick={() => { saveTemplate({ ...t, id: null, name: t.name + ' copy', createdAt: null }); toast('Workout duplicated'); close(); }}>Duplicate</button>
         <button class="btn btn-ghost danger" onClick={async () => {
@@ -128,6 +133,7 @@ export function TrainScreen() {
         </button>
       )}
 
+      <Insights s={s} exercises={exercises} />
       <WeekStrip workouts={s.workouts} weekStart={s.settings.weekStart} unit={s.settings.unit} exercises={exercises} />
       {s.workouts.length > 0 && <MovedCard workouts={s.workouts} exercises={exercises} unit={s.settings.unit} weekStart={s.settings.weekStart} />}
 
@@ -149,6 +155,9 @@ export function TrainScreen() {
               <p class="muted small clamp">{nextT.items.map((i) => exerciseOf(exercises, i.exId).name).join(', ')}</p>
               <button class="btn btn-primary full" onClick={() => begin({ template: nextT, programId: program.id, programPos: next.pos })}>
                 <Icon name="play" size={18} fill="currentColor" stroke={0} /> Start day {next.day}
+              </button>
+              <button class="link next-fit" onClick={() => timeboxSheet(nextT, (tt) => begin({ template: tt, programId: program.id, programPos: next.pos }))}>
+                <Icon name="timer" size={17} /> Short on time? Fit it in
               </button>
             </>
           ) : (

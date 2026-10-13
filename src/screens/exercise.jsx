@@ -7,6 +7,45 @@ import { Icon, Header, Chips, pop, openSheet, confirmSheet, toast, Empty } from 
 import { LineChart } from '../components/charts.jsx';
 import { ExerciseForm } from './pickers.jsx';
 import { hasPreview, hasPhotos, ExVisual, ExGuide } from '../components/preview.jsx';
+import { liftStatus, painHistory, painCheck } from '../lib/insights.js';
+import { Sparkline } from '../components/charts.jsx';
+import { Why } from '../components/why.jsx';
+
+const STATUS = {
+  improving: ['Improving', 'up'], steady: ['Holding steady', 'flat'], declining: ['Trending down', 'down'], stalled: ['Stalled', 'flat'],
+};
+function TrendLine({ st }) {
+  if (!STATUS[st.status]) return null;
+  const [label, cls] = STATUS[st.status];
+  const detail = st.status === 'declining' ? `${Math.round(st.drop * 100)}% below its recent best for 3 sessions`
+    : st.status === 'stalled' ? `no new best in ${st.weeks} weeks`
+      : `${st.change >= 0 ? '+' : ''}${Math.round(st.change * 100)}% est. 1RM over the last 12 weeks`;
+  return (
+    <div class={'trend-line t-' + cls}>
+      <span><strong>{label}</strong> <span class="muted">· {detail}</span></span>
+      <Why id={st.status === 'stalled' ? 'variation' : 'trend'} />
+    </div>
+  );
+}
+function PainPanel({ hist }) {
+  const pc = painCheck(hist);
+  if (!pc) return null;
+  return (
+    <section class="panel">
+      <div class="panel-head"><h2 class="h-sec m0">Pain log</h2><Why id="pain" /></div>
+      <div class="row-between">
+        <span><strong class="num pain-last">{pc.last.v}/10</strong> <span class="small muted">last logged {fmtDateShort(pc.last.t)}</span></span>
+        <Sparkline values={hist.slice(-12).map((p) => p.v)} width={110} height={34} color={pc.over ? 'var(--red)' : 'var(--yellow)'} />
+      </div>
+      <ul class="pain-checks small">
+        <li class={pc.over ? 'bad' : 'good'}>{pc.over ? 'Above' : 'Within'} 5/10 during exercise</li>
+        <li class={pc.rising ? 'bad' : 'good'}>{pc.rising ? 'Higher this week than last week' : 'Not rising week to week'}</li>
+        <li class="ask">Settled by the next morning? Only you can tell.</li>
+      </ul>
+      <p class="small muted">These are the three checks of the pain-monitoring model used in tendon rehab. Persistent or worsening pain is worth a clinician’s opinion.</p>
+    </section>
+  );
+}
 
 const mem = { range: 'All' };
 
@@ -100,6 +139,8 @@ export function ExerciseScreen({ id }) {
               {metric === 'e1rm' && <p class="small muted">Estimated with the {formula === 'epley' ? 'Epley' : 'Brzycki'} formula from your best set each session. Yellow dots are sessions with a record.</p>}
             </section>
 
+            {ex.kind === 'weight' && <TrendLine st={liftStatus(all.filter((h) => h.e1rm > 0).map((h) => ({ t: h.t, v: h.e1rm })))} />}
+            <PainPanel hist={painHistory(s.workouts, id)} />
             <section>
               <h2 class="h-sec">Records</h2>
               <div class="rec-grid">

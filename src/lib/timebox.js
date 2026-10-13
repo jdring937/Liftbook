@@ -1,0 +1,116 @@
+// Fit a workout into a time budget.
+// Estimate: each set takes its working time plus rest, plus a little setup per exercise,
+// scaled by how long your past sessions actually took compared with the same estimate.
+// Trimming follows time-efficient training guidance (Iversen et al. 2021): keep multi-joint lifts
+// longest, trim accessories first, drop accessories that repeat a muscle already trained, and
+// shorten rest on isolation exercises (compound lifts keep at least 2 minutes).
+import { isWork } from './calc.js';
+
+const ISOLATION_RE = /curl|raise|fly|flye|crossover|extension|skull|pushdown|push down|kickback|face pull|shrug|crunch|calf|rear delt|wrist|external rotation|abduction|adduction|pullover|straight-arm|plank|dead bug|twist|woodchop|pallof|rollout|hang|bridge|sit up/i;
+export const isCompound = (ex) => (ex && ex.compound != null ? !!ex.compound : !!ex && !ISOLATION_RE.test(ex.name));
+
+const SETUP = 45; // seconds to set up / move between exercises
+const ISO_REST = 75;
+const COMPOUND_REST_FLOOR = 120;
+
+function workSec(ex, reps) {
+  if (ex && ex.kind === 'time') return 45;
+  return 15 + 3 * (reps || 10);
+}
+const restOf = (rest, def) => (rest == null ? def : rest === 0 ? 60 : rest);
+
+// raw estimate in seconds for [{ sets, rest, reps, ex }]
+function rawEstimate(rows) {
+  let t = 0;
+  rows.forEach((r) => { if (r.sets > 0) t += SETUP + r.sets * workSec(r.ex, r.reps) + (r.sets - 1) * r.rest + r.rest; });
+  return Math.max(0, t - (rows.length ? rows[rows.length - 1].rest : 0));
+}
+
+// How long past sessions really took versus the same estimate (median ratio, needs 3+ sessions)
+export function calibration(workouts, exercises, defRest) {
+  const ratios = [];
+  const recent = [...workouts].filter((w) => w.end && w.start).sort((a, b) => b.start - a.start).slice(0, 15);
+  for (const w of recent) {
+    const dur = (w.end - w.start) / 1000;
+    if (dur < 600 || dur > 3 * 3600) continue;
+    const rows = w.exercises.map((e) => {
+      const done = e.sets.filter((s) => s.done || isWork(s));
+      const reps = done.length ? done.reduce((a, s) => a + (s.r || 0), 0) / done.length : 10;
+      return { sets: done.length, rest: restOf(e.rest, defRest), reps, ex: exercises[e.exId] };
+    }).filter((r) => r.sets);
+    const est = rawEstimate(rows);
+    if (est > 300) ratios.push(dur / est);
+  }
+  if (ratios.length < 3) return { k: 1, n: ratios.length };
+  ratios.sort((a, b) => a - b);
+  const k = Math.min(1.6, Math.max(0.7, ratios[Math.floor(ratios.length / 2)]));
+  return { k, n: ratios.length };
+}
+
+function rowsFor(items, exercises, defRest) {
+  return items.map((it, i) => ({
+    i, exId: it.exId, ex: exercises[it.exId], sets: it.sets || 0, origSets: it.sets || 0,
+    rest: restOf(it.rest, defRest), origRest: restOf(it.rest, defRest), reps: it.max || it.min || 10,
+    compound: isCompound(exercises[it.exId]), dropped: false, item: it,
+  }));
+}
+
+export function estimateTemplate(items, exercises, defRest, k = 1) {
+  return rawEstimate(rowsFor(items, exercises, defRest)) * k;
+}
+
+export function fitToTime(items, exercises, budgetMin, { defRest = 120, k = 1 } = {}) {
+  const rows = rowsFor(items, exercises, defRest);
+  const budget = budgetMin * 60;
+  const live = () => rows.filter((r) => !r.dropped && r.sets > 0);
+  const est = () => rawEstimate(live()) * k;
+  const fits = () => est() <= budget;
+  const full = est();
+
+  // trim one set at a time from the matching exercise with the most sets above its floor (later exercises first)
+  const trimTo = (pred, floor) => {
+    while (!fits()) {
+      const c = live().filter((r) => pred(r) && r.sets > floor);
+      if (!c.length) return;
+      c.sort((a, b) => b.sets - a.sets || b.i - a.i);
+      c[0].sets--;
+    }
+  };
+  const dropFromEnd = (pred) => {
+    for (const r of [...live()].reverse()) {
+      if (fits()) return;
+      if (live().length <= 1) return;
+      if (pred(r)) r.dropped = true;
+    }
+  };
+  const iso = (r) => !r.compound;
+  const comp = (r) => r.compound;
+
+  // shorten rest one exercise at a time, last exercise first, only as far as needed
+  const capRest = (pred, cap) => {
+    for (const r of [...live()].reverse()) {
+      if (fits()) return;
+      if (pred(r) && r.rest > cap) r.rest = cap;
+    }
+  };
+  capRest(iso, ISO_REST);
+  capRest(comp, 150);
+  // accessories whose main muscles an earlier exercise already trains as a main muscle
+  dropFromEnd((r) => iso(r) && r.ex && r.ex.primary.every((m) => live().some((o) => o.i < r.i && o.ex && o.ex.primary.includes(m))));
+  trimTo(iso, 2);
+  trimTo(comp, 3);
+  trimTo(iso, 1);
+  trimTo(comp, 2);
+  dropFromEnd(iso);
+  capRest(comp, COMPOUND_REST_FLOOR);
+  trimTo(comp, 1);
+  dropFromEnd(() => true);
+
+  const kept = rows.filter((r) => !r.dropped && r.sets > 0);
+  const newItems = kept.map((r) => ({ ...r.item, sets: r.sets, rest: r.rest !== r.origRest ? r.rest : r.item.rest }));
+  const changes = rows.map((r) => ({
+    exId: r.exId, name: r.ex ? r.ex.name : 'Exercise', compound: r.compound,
+    dropped: r.dropped || r.sets === 0, sets: [r.origSets, r.sets], rest: [r.origRest, r.rest],
+  }));
+  return { items: newItems, changes, full, est: est(), fits: fits(), budget };
+}

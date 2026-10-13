@@ -28,15 +28,19 @@ export function defaultState() {
     settings: {
       unit: 'lb', rest: 120, formula: 'brzycki', weekStart: 0, theme: 'system',
       keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, bodySex: 'male', lastBackup: null,
+      deloadUntil: null, lastDeload: null,
     },
     custom: {},
     templates: [],
     programs: [],
     activeProgram: null,
     workouts: [],
+    goals: [],
+    body: [],
+    photos: [],
     active: null,
     rest: null,
-    meta: { created: Date.now(), seedCleaned: true },
+    meta: { created: Date.now(), seedCleaned: true, dismissed: {} },
   };
 }
 
@@ -73,7 +77,16 @@ function db() {
   }
   return dbp;
 }
-async function idbGet(key) {
+export async function idbDel(key) {
+  const d = await db();
+  return new Promise((res, rej) => {
+    const tx = d.transaction('kv', 'readwrite');
+    tx.objectStore('kv').delete(key);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+export async function idbGet(key) {
   const d = await db();
   return new Promise((res, rej) => {
     const q = d.transaction('kv', 'readonly').objectStore('kv').get(key);
@@ -81,7 +94,7 @@ async function idbGet(key) {
     q.onerror = () => rej(q.error);
   });
 }
-async function idbSet(key, val) {
+export async function idbSet(key, val) {
   const d = await db();
   return new Promise((res, rej) => {
     const tx = d.transaction('kv', 'readwrite');
@@ -104,7 +117,10 @@ function migrate(s) {
     templates: s.templates || [],
     programs: s.programs || [],
     workouts: s.workouts || [],
-    meta: { ...d.meta, ...(s.meta || {}) },
+    goals: s.goals || [],
+    body: s.body || [],
+    photos: s.photos || [],
+    meta: { ...d.meta, ...(s.meta || {}), dismissed: { ...((s.meta && s.meta.dismissed) || {}) } },
     schema: SCHEMA,
   };
 }
@@ -188,7 +204,8 @@ export function startWorkout({ template = null, programId = null, programPos = n
     templateId: template ? template.id : null,
     programId, programPos,
     start: Date.now(), end: null, note: '',
-    exercises: template ? template.items.map((i) => newEntry(i.exId, i)) : [],
+    exercises: template ? template.items.map((i) => newEntry(i.exId, deloadActive() ? { ...i, sets: Math.max(1, Math.ceil((i.sets || 3) / 2)) } : i)) : [],
+    deload: deloadActive() || undefined,
   };
   update((s) => ({ ...s, active: w, rest: null }));
   return w;
@@ -324,22 +341,81 @@ export function stopRest() {
 }
 
 // ---------- backup ----------
+// Photos are kept out of the JSON backup (they have their own export) so backups stay small
 export function exportJSON() {
-  return JSON.stringify({ app: 'liftbook', exported: new Date().toISOString(), ...state, rest: null }, null, 1);
+  return JSON.stringify({ app: 'liftbook', exported: new Date().toISOString(), ...state, photos: undefined, rest: null }, null, 1);
 }
 export function importJSON(text) {
   const obj = JSON.parse(text);
   if (!obj || !Array.isArray(obj.workouts) || !Array.isArray(obj.templates)) throw new Error('This file is not a Liftbook backup.');
   delete obj.app; delete obj.exported;
+  obj.photos = state.photos;
   setState(migrate(obj));
   saveNow();
 }
 export function eraseAll() {
+  const photos = state.photos || [];
   const d = defaultState();
   d.templates = [];
   setState(d);
   saveNow();
+  for (const p of photos) { idbDel('ph:' + p.id).catch(() => {}); idbDel('pt:' + p.id).catch(() => {}); }
 }
+
+// ---------- deload week ----------
+export const deloadActive = (s = state) => !!(s.settings.deloadUntil && s.settings.deloadUntil > Date.now());
+export function startDeload(days = 7) {
+  const until = startOfDay(Date.now()) + days * 86400000 + 86399999;
+  update((s) => ({ ...s, settings: { ...s.settings, deloadUntil: until, lastDeload: Date.now() } }));
+}
+export function endDeload() {
+  update((s) => ({ ...s, settings: { ...s.settings, deloadUntil: null } }));
+}
+export function dismiss(key) {
+  update((s) => ({ ...s, meta: { ...s.meta, dismissed: { ...s.meta.dismissed, [key]: Date.now() } } }));
+}
+
+// ---------- goals ----------
+export function saveGoal(g) {
+  const id = g.id || uid();
+  update((s) => {
+    const ng = { createdAt: Date.now(), ...g, id };
+    const exists = s.goals.some((x) => x.id === id);
+    return { ...s, goals: exists ? s.goals.map((x) => (x.id === id ? ng : x)) : [...s.goals, ng] };
+  });
+  return id;
+}
+export function deleteGoal(id) {
+  update((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) }));
+}
+
+// ---------- body log: bodyweight (kg) and measurements (cm) ----------
+export function addBody(entry) {
+  const id = entry.id || uid();
+  update((s) => ({ ...s, body: [...s.body.filter((b) => b.id !== id), { ...entry, id }].sort((a, b) => a.t - b.t) }));
+  return id;
+}
+export function deleteBody(id) {
+  update((s) => ({ ...s, body: s.body.filter((b) => b.id !== id) }));
+}
+
+// ---------- progress photos (images live in IndexedDB under ph:<id> and pt:<id>) ----------
+export async function addPhoto(meta, full, thumb) {
+  const id = meta.id || uid();
+  await idbSet('ph:' + id, full);
+  await idbSet('pt:' + id, thumb);
+  update((s) => ({ ...s, photos: [...s.photos.filter((p) => p.id !== id), { ...meta, id }].sort((a, b) => a.t - b.t) }));
+  return id;
+}
+export async function deletePhoto(id) {
+  update((s) => ({ ...s, photos: s.photos.filter((p) => p.id !== id) }));
+  await idbDel('ph:' + id).catch(() => {});
+  await idbDel('pt:' + id).catch(() => {});
+}
+export function updatePhoto(id, patch) {
+  update((s) => ({ ...s, photos: s.photos.map((p) => (p.id === id ? { ...p, ...patch } : p)) }));
+}
+export const photoBlob = (id, thumb = false) => idbGet((thumb ? 'pt:' : 'ph:') + id);
 
 export function exportCSV(exercises) {
   const unit = state.settings.unit;

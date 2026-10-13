@@ -151,11 +151,19 @@ export function lastSetsFor(workouts, exId, beforeT = Infinity) {
 // range, add one increment and drop back to the bottom of the range; otherwise keep the
 // weight and add a rep to each set, capped at the top of the range.
 // Without a range: keep the weight and beat each set by a rep.
-export function sessionTargets(prev, ex, range, incKg) {
+export function sessionTargets(prev, ex, range, incKg, opts = {}) {
   const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
   if (!work.length) return null;
   const min = range && range.min ? range.min : null;
   const max = range && range.max ? range.max : null;
+  // deload week: about half the sets, same weight, easier reps
+  if (opts.deload) {
+    const half = work.slice(0, Math.max(1, Math.ceil(work.length / 2)));
+    return {
+      sets: half.map((s) => ({ w: s.w ?? null, r: ex.kind === 'time' ? undefined : (min || s.r), t: ex.kind === 'time' ? s.t : undefined })),
+      kind: 'deload', note: 'Deload: same weight, stop 3–4 reps short of failure',
+    };
+  }
   if (ex.kind === 'time') {
     return { sets: work.map((s) => ({ w: s.w ?? null, t: (s.t || 0) + 5 })), kind: 'more', note: '5 seconds longer than last time' };
   }

@@ -9,6 +9,8 @@ import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum,
 import { Icon, NumInput, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
 import { openPicker, musclesText } from './pickers.jsx';
 import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
+import { Why } from '../components/why.jsx';
+const WhyLink = () => <Why id="pain" />;
 
 const TYPE_LABEL = { w: 'W', d: 'D', f: 'F' };
 const TYPE_NAME = { n: 'Normal', w: 'Warm-up', d: 'Drop set', f: 'Failure' };
@@ -215,6 +217,7 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
           <button class="menu-row" onClick={() => { close(); push('exercise', { id: ex.id }); }}><Icon name="progress" size={20} /> History and records</button>
           <button class="menu-row" onClick={() => { close(); onReplace(); }}><Icon name="swap" size={20} /> Replace exercise</button>
           <button class="menu-row" onClick={() => { close(); noteSheet(entry.note, (note) => onChange({ ...entry, note })); }}><Icon name="note" size={20} /> {entry.note ? 'Edit note' : 'Add note'}</button>
+          <button class="menu-row" onClick={() => { close(); painSheet(entry.pain, (pain) => onChange({ ...entry, pain })); }}><Icon name="flame" size={20} /> Pain or discomfort {entry.pain != null && <span class="muted ml-auto">{entry.pain}/10</span>}</button>
           {notes.length > 0 && <button class="menu-row" onClick={() => { close(); notesSheet(ex, notes, unit); }}><Icon name="note" size={20} /> Past notes <span class="muted ml-auto">{notes.length}</span></button>}
           {mode === 'active' && (
             <button class="menu-row" onClick={() => { close(); restSheet(entry.rest, (rest) => onChange({ ...entry, rest })); }}>
@@ -245,6 +248,11 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
         <button class="icon-btn" aria-label={`${ex.name} options`} onClick={menu}><Icon name="more" /></button>
       </div>
       {entry.note && <p class="ex-note">{entry.note}</p>}
+      {entry.pain != null && (
+        <button class={'pain-pill ' + (entry.pain > 5 ? 'hi' : entry.pain > 2 ? 'mid' : 'lo')} onClick={() => painSheet(entry.pain, (pain) => onChange({ ...entry, pain }))}>
+          Pain {entry.pain}/10{entry.pain > 5 ? ' · above 5/10' : ''}
+        </button>
+      )}
       {notes.length > 0 && notes[0].note !== entry.note && (
         <button class="last-note" onClick={() => notesSheet(ex, notes, unit)}>
           <Icon name="note" size={16} />
@@ -254,7 +262,7 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
       )}
       {targets && (
         <div class={'target t-' + targets.kind}>
-          <Icon name={targets.kind === 'up' ? 'arrowUp' : 'flame'} size={17} stroke={2.2} />
+          <Icon name={targets.kind === 'up' ? 'arrowUp' : targets.kind === 'deload' ? 'arrowDown' : 'flame'} size={17} stroke={2.2} />
           <span><strong class="num">Target {targetSummary(targets, ex, unit)}</strong><span class="small">{targets.note}</span></span>
         </div>
       )}
@@ -293,6 +301,28 @@ function notesSheet(ex, notes) {
           </div>
         ))}
       </div>
+    </div>
+  ));
+}
+
+export function painSheet(value, onSave) {
+  openSheet((close) => (
+    <div class="sheet-pad">
+      <div class="row-between">
+        <h3 class="sheet-title">Pain or discomfort</h3>
+        <button class="icon-btn" aria-label="Close" onClick={close}><Icon name="x" /></button>
+      </div>
+      <p class="small muted mb-8">How much did this exercise hurt, from 0 (none) to 10 (worst imaginable)?</p>
+      <div class="pain-grid" role="group" aria-label="Pain from 0 to 10">
+        {Array.from({ length: 11 }, (_, n) => (
+          <button key={n} class={'pain-n' + (value === n ? ' on' : '') + (n > 5 ? ' hi' : n > 2 ? ' mid' : ' lo')} aria-pressed={value === n}
+            onClick={() => { onSave(n); close(); }}>{n}</button>
+        ))}
+      </div>
+      <p class="small muted mt-16">
+        A common rehab guide: up to 5/10 during exercise can be acceptable if it settles by the next morning and isn’t getting worse week to week. <WhyLink />
+      </p>
+      {value != null && <button class="btn btn-ghost full mt-8" onClick={() => { onSave(null); close(); }}>Clear pain rating</button>}
     </div>
   ));
 }
@@ -449,7 +479,7 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
           const ex = exerciseOf(exercises, e.exId);
           const prev = lastSetsFor(others, e.exId);
           const notes = pastNotes(others, e.exId, isActive ? Infinity : w.start);
-          const targets = isActive && s.settings.targets ? sessionTargets(prev, ex, e.target, toKg(incr, unit)) : null;
+          const targets = isActive && s.settings.targets ? sessionTargets(prev, ex, e.target, toKg(incr, unit), { deload: w.deload }) : null;
           return (
             <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula}
               prev={prev} best={best[e.exId]} targets={targets} mode={mode} notes={notes}
