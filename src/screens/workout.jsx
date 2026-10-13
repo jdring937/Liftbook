@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { Fragment } from 'preact';
 import {
   useStore, getState, allExercises, updateActive, finishActive, discardActive, saveWorkout, deleteWorkout,
   newEntry, newSet, startRest, adjustRest, stopRest, saveTemplate, templateFromWorkout,
 } from '../store.js';
-import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets, pastNotes } from '../lib/calc.js';
+import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets, pastNotes, effortReps, effortLabel } from '../lib/calc.js';
 import { movedLine } from '../components/moved.jsx';
 import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum, uid, plural, fmtSecs, fmtDateShort, daysAgo } from '../lib/util.js';
-import { Icon, NumInput, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
+import { Icon, NumInput, Toggle, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
 import { openPicker, musclesText } from './pickers.jsx';
 import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
 import { Why } from '../components/why.jsx';
@@ -140,7 +141,7 @@ function targetSummary(tg, ex, unit) {
 }
 
 // ---------- one set row ----------
-function SetRow({ set, label, ph, last, ex, unit, isPR, current, onChange, onDone, onMenu }) {
+function SetRow({ set, label, ph, last, ex, unit, isPR, current, scale, onChange, onDone, onMenu }) {
   const wRef = useRef(null), rRef = useRef(null);
   const phW = ph.w != null ? wNum(ph.w, unit, 2) : null;
   const fillLast = () => { if (last) onChange({ ...set, w: last.w ?? set.w, r: last.r ?? set.r, t: last.t ?? set.t }); };
@@ -162,7 +163,9 @@ function SetRow({ set, label, ph, last, ex, unit, isPR, current, onChange, onDon
   };
   return (
     <div class={'set-row' + (set.done ? ' done' : '') + (current ? ' cur' : '') + (set.type !== 'n' ? ' t-' + set.type : '')}>
-      <button class="set-num num" onClick={onMenu} aria-label={`Set ${label} options`}>{label}</button>
+      <button class={'set-num num' + (set.rir != null ? ' has-eff' : '')} onClick={onMenu} aria-label={`Set ${label} options${set.rir != null ? `, ${effortLabel(set.rir, scale)}` : ''}`}>
+        {label}{set.rir != null && <span class="set-eff">{effortLabel(set.rir, scale, true)}</span>}
+      </button>
       <button class="set-prev num" onClick={fillLast} disabled={!last}>
         {isPR ? <Icon name="medal" size={15} class="pr-ic" /> : null}{last ? setText(last, ex, unit) : '–'}
       </button>
@@ -179,7 +182,7 @@ function SetRow({ set, label, ph, last, ex, unit, isPR, current, onChange, onDon
 }
 
 // ---------- one exercise block ----------
-function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formula, mode, notes = [], onChange, onRemove, onMove, onReplace, onSetDone }) {
+function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formula, mode, notes = [], effort = false, scale = 'rir', rateFor, setRateFor, onChange, onRemove, onMove, onReplace, onSetDone }) {
   const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
   let normal = 0;
   const labels = entry.sets.map((s) => (s.type === 'n' ? String(++normal) : TYPE_LABEL[s.type]));
@@ -201,6 +204,11 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
               {entry.sets[i].type === k && <Icon name="check" size={18} class="ml-auto" />}
             </button>
           ))}
+          {entry.sets[i].type !== 'w' && ex.kind !== 'time' && (
+            <button class="menu-row" onClick={() => { close(); setRateFor(entry.sets[i].id); }}>
+              <Icon name="flame" size={20} /> {entry.sets[i].rir != null ? `Effort: ${effortLabel(entry.sets[i].rir, scale)}` : 'Rate effort'}
+            </button>
+          )}
           <button class="menu-row danger" onClick={() => { onChange({ ...entry, sets: entry.sets.filter((_, j) => j !== i) }); close(); }}>
             <Icon name="trash" size={20} /> Delete set
           </button>
@@ -272,17 +280,40 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
       {entry.sets.map((s, i) => {
         let isPR = false;
         if (s.done && s.type !== 'w' && best && ex.kind === 'weight') {
-          const est = e1rm(s.w, s.r, formula) || 0;
+          const est = e1rm(s.w, effortReps(s), formula) || 0;
           isPR = (s.w || 0) > best.topW + 1e-6 || est > best.e1rm + 1e-6;
         }
         return (
-          <SetRow key={s.id} set={s} label={labels[i]} ph={phs[i]} last={lastFor[i]} ex={ex} unit={unit} isPR={isPR}
-            current={mode === 'active' && i === current}
-            onChange={(ns) => setSet(i, ns)} onDone={(ns) => onSetDone(entry, ns)} onMenu={() => setMenu(i)} />
+          <Fragment key={s.id}>
+            <SetRow set={s} label={labels[i]} ph={phs[i]} last={lastFor[i]} ex={ex} unit={unit} isPR={isPR} scale={scale}
+              current={mode === 'active' && i === current}
+              onChange={(ns) => setSet(i, ns)}
+              onDone={(ns) => { onSetDone(entry, ns); if (effort && ns.type !== 'w' && ex.kind !== 'time') setRateFor(ns.id); }}
+              onMenu={() => setMenu(i)} />
+            {rateFor === s.id && <EffortPicker value={s.rir} scale={scale} onPick={(rir) => { setSet(i, { ...s, rir }); setRateFor(null); }} onClose={() => setRateFor(null)} />}
+          </Fragment>
         );
       })}
       <button class="add-set" onClick={addSet}><Icon name="plus" size={18} /> Add set</button>
     </section>
+  );
+}
+
+const RIR_OPTS = [[0, '0'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5+']];
+const RPE_OPTS = [[4, '6'], [3, '7'], [2.5, '7.5'], [2, '8'], [1.5, '8.5'], [1, '9'], [0.5, '9.5'], [0, '10']];
+// Inline effort rating that opens under a set right after you check it; ignore it and it goes away
+function EffortPicker({ value, scale, onPick, onClose }) {
+  const opts = scale === 'rpe' ? RPE_OPTS : RIR_OPTS;
+  return (
+    <div class="effort-pick" role="group" aria-label={scale === 'rpe' ? 'How hard was that set, RPE' : 'Reps left in reserve'}>
+      <span class="eff-l">{scale === 'rpe' ? 'RPE' : 'Reps left'}</span>
+      <div class="eff-opts">
+        {opts.map(([rir, label]) => (
+          <button key={label} class={'eff' + (value === rir ? ' on' : '')} aria-pressed={value === rir} onClick={() => onPick(rir)}>{label}</button>
+        ))}
+      </div>
+      <button class="icon-btn sm eff-x" aria-label={value != null ? 'Clear effort' : 'Skip rating'} onClick={() => (value != null ? onPick(null) : onClose())}><Icon name="x" size={16} /></button>
+    </div>
   );
 }
 
@@ -371,6 +402,8 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
   });
   const isActive = mode === 'active';
   const w = isActive ? s.active : local;
+  const [rateFor, setRateFor] = useState(null);
+  const scale = s.settings.effortScale || 'rir';
   const setW = isActive ? updateActive : (fn) => setLocal((x) => fn(x));
   useWakeLock(isActive && s.settings.keepAwake);
 
@@ -483,6 +516,7 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
           return (
             <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula}
               prev={prev} best={best[e.exId]} targets={targets} mode={mode} notes={notes}
+              effort={!!w.effort} scale={scale} rateFor={rateFor} setRateFor={setRateFor}
               onChange={(ne) => setEntries((list) => list.map((x) => (x.id === e.id ? ne : x)))}
               onRemove={() => setEntries((list) => list.filter((x) => x.id !== e.id))}
               onMove={(d) => setEntries((list) => { const a = [...list]; const j = i + d; [a[i], a[j]] = [a[j], a[i]]; return a; })}
@@ -497,6 +531,10 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
           </div>
         )}
         <button class="btn btn-soft full" onClick={addExercises}><Icon name="plus" size={20} /> Add exercises</button>
+        <label class="effort-toggle">
+          <span><span>Rate effort after each set</span><span class="small muted">{scale === 'rpe' ? 'RPE' : 'Reps left in reserve'}, optional for every set. <Why id="effort" /></span></span>
+          <Toggle on={!!w.effort} onChange={(v) => { setW((x) => ({ ...x, effort: v })); if (!v) setRateFor(null); }} label="Rate effort after each set" />
+        </label>
         {isActive && <button class="btn btn-ghost danger full mt-8" onClick={discard}>Discard workout</button>}
         {!isActive && !isNew && <button class="btn btn-ghost danger full mt-8" onClick={del}>Delete workout</button>}
       </div>
@@ -533,6 +571,12 @@ function Summary({ id, close }) {
         <div><span class="stat-v num">{sum.sets}</span><span class="stat-l">Sets</span></div>
       </div>
       {movedLine(sum.vol, w.id) && <p class="moved-sum">You moved about <strong>{movedLine(sum.vol, w.id)}</strong>.</p>}
+      {(() => {
+        const rs = w.exercises.flatMap((e) => e.sets.filter((x) => isWork(x) && x.rir != null).map((x) => x.rir));
+        if (!rs.length) return null;
+        const avg = rs.reduce((a, b) => a + b, 0) / rs.length;
+        return <p class="moved-sum">Average effort: <strong>{s.settings.effortScale === 'rpe' ? `RPE ${fmtNum(10 - avg, 1)}` : `${fmtNum(avg, 1)} reps left`}</strong> across {plural(rs.length, 'rated set')}.</p>;
+      })()}
       {pr.count > 0 && (
         <div class="pr-list">
           <div class="pr-title"><Icon name="medal" size={20} class="pr-ic" /> {plural(pr.count, 'personal record')}</div>

@@ -138,6 +138,16 @@ export const EVIDENCE = {
       { cite: 'Kellis E, Sahinis C, Baltzopoulos V (2023). Is hamstrings-to-quadriceps torque ratio useful for predicting anterior cruciate ligament and hamstring injuries? A systematic and critical review. J Sport Health Sci 12(3):343–358.', url: doi('10.1016/j.jshs.2022.01.002') },
     ],
   },
+  effort: {
+    title: 'Rating effort (RIR and RPE)',
+    summary: 'Reps in reserve (RIR) is how many more reps you could have done. The RIR-based RPE scale maps RPE 10 to no reps left, RPE 9 to one left, and so on. In a meta-analysis, people underestimated their reps left by about one on average, and were a little more accurate closer to failure and on sets under about 12 reps.',
+    app: 'Effort is optional. When you log it, estimated 1RM uses your reps plus reps left (capped at 5), so an easier day doesn’t look like lost strength. If the reps you had left would have reached the top of your rep range with 2+ to spare on every top set, the next target adds weight (an app rule of thumb). RPE is stored as reps left, so RPE 8 = 2 left.',
+    refs: [
+      { cite: 'Zourdos MC, Klemp A, Dolan C, et al. (2016). Novel Resistance Training–Specific Rating of Perceived Exertion Scale Measuring Repetitions in Reserve. J Strength Cond Res 30(1):267–275.', url: doi('10.1519/JSC.0000000000001049') },
+      { cite: 'Helms ER, Cronin J, Storey A, Zourdos MC (2016). Application of the Repetitions in Reserve-Based Rating of Perceived Exertion Scale for Resistance Training. Strength Cond J 38(4):42–49.', url: doi('10.1519/SSC.0000000000000218') },
+      { cite: 'Halperin I, Malleron T, Har-Nir I, et al. (2022). Accuracy in Predicting Repetitions to Task Failure in Resistance Exercise: A Scoping Review and Exploratory Meta-analysis. Sports Med 52(2):377–390.', url: doi('10.1007/s40279-021-01559-x') },
+    ],
+  },
   pain: {
     title: 'Exercising with pain',
     summary: 'In a trial of people with Achilles tendinopathy, continuing running and jumping guided by a pain-monitoring model did as well as stopping them for 6 weeks, with both groups doing the same rehab exercises. Pain was allowed up to 5/10 during activity, had to settle by the next morning, and could not get worse from week to week. The evidence is from Achilles rehab; persistent or worsening pain deserves a clinician’s opinion.',
@@ -148,4 +158,4 @@ export const EVIDENCE = {
   },
 };
 
-export const EVIDENCE_ORDER = ['volume', 'frequency', 'sets', 'load', 'failure', 'rest', 'progression', 'timeEfficient', 'deload', 'trend', 'variation', 'e1rm', 'weightRate', 'weighTrend', 'balance', 'pain'];
+export const EVIDENCE_ORDER = ['volume', 'frequency', 'sets', 'load', 'failure', 'effort', 'rest', 'progression', 'timeEfficient', 'deload', 'trend', 'variation', 'e1rm', 'weightRate', 'weighTrend', 'balance', 'pain'];

@@ -131,6 +131,11 @@ export function TemplateEditor({ id }) {
             ))}
           </div>
         </div>
+        <div class="field">
+          <span>Rate effort (RIR/RPE) <em class="muted">default: {s.settings.effortDefault ? 'on' : 'off'}</em></span>
+          <Seg options={[['default', 'Default'], ['on', 'On'], ['off', 'Off']]} value={t.effort == null ? 'default' : t.effort ? 'on' : 'off'}
+            onChange={(v) => setT((x) => ({ ...x, effort: v === 'default' ? null : v === 'on' }))} />
+        </div>
         <div class="stack-12">
           {t.items.map((it, i) => {
             const ex = exerciseOf(exercises, it.exId);

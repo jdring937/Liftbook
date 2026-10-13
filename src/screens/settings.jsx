@@ -80,6 +80,12 @@ export function SettingsScreen() {
             <Row label="Keep screen on during workouts">
               <Toggle on={st.keepAwake} onChange={(v) => setSettings({ keepAwake: v })} label="Keep screen on" />
             </Row>
+            <Row label="Rate effort after each set" sub="Off by default; each workout can turn it on or off">
+              <Toggle on={!!st.effortDefault} onChange={(v) => setSettings({ effortDefault: v })} label="Rate effort after each set" />
+            </Row>
+            <Row label="Effort scale" sub={st.effortScale === 'rpe' ? 'RPE 10 = no reps left, 9 = one left' : 'How many more reps you could have done'}>
+              <Seg options={[['rir', 'RIR'], ['rpe', 'RPE']]} value={st.effortScale || 'rir'} onChange={(v) => setSettings({ effortScale: v })} />
+            </Row>
             <Row label="Session targets" sub="Aim for each set based on your last session">
               <Toggle on={st.targets} onChange={(v) => setSettings({ targets: v })} label="Session targets" />
             </Row>

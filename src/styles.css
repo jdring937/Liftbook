@@ -837,3 +837,20 @@ input[type='range'] { width: 100%; accent-color: var(--blue); min-height: 32px; 
 .cmp-strip .ph-tag { display: none; }
 
 .body-add-in .num-in, .goal-lift .num-in { height: 48px; }
+
+.ph-day-head { margin-bottom: 8px; }
+.ph-day-head .ph-day { margin: 0; }
+.ph-day-head .link { padding: 4px 0; }
+
+/* ---------- effort (RIR / RPE) ---------- */
+.set-num.has-eff { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 2px; height: 40px; }
+.set-eff { font-size: 9.5px; font-weight: 700; color: var(--blue); letter-spacing: -0.01em; white-space: nowrap; }
+.effort-pick { display: flex; align-items: center; gap: 8px; margin: 2px 4px 8px; padding: 6px 6px 6px 10px; border-radius: 12px; background: color-mix(in srgb, var(--blue) 10%, var(--surface-2)); animation: rise 0.18s ease; }
+.eff-l { flex: none; font-size: 12px; font-weight: 700; color: var(--text-2); width: 40px; line-height: 1.1; }
+.eff-opts { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; min-width: 0; }
+.eff { height: 36px; border-radius: 9px; background: var(--surface); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; padding: 0; }
+.eff.on { background: var(--blue); color: #fff; }
+.eff-x { flex: none; }
+.effort-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); }
+.effort-toggle > span { display: flex; flex-direction: column; gap: 2px; }
+.effort-toggle .why { font-size: 13px; padding: 0; }

@@ -11,6 +11,18 @@ export function e1rm(kg, reps, formula = 'brzycki') {
 
 export const isWork = (s) => s.done && s.type !== 'w';
 
+// Reps used for estimated 1RM: when reps in reserve were logged, reps + reps left (capped at 5),
+// since rep-max formulas assume the set went to failure.
+export const effortReps = (s) => (s.rir != null && s.r ? s.r + Math.min(5, Math.max(0, s.rir)) : s.r);
+
+// Effort labels: stored as reps in reserve; RPE on the RIR-based scale is 10 - RIR
+export function effortLabel(rir, scale, short = false) {
+  if (rir == null) return '';
+  if (scale === 'rpe') return short ? `@${10 - rir}` : `RPE ${10 - rir}`;
+  if (short) return rir >= 5 ? '5+ left' : `${rir} left`;
+  return rir >= 5 ? '5+ reps left' : `${rir} rep${rir === 1 ? '' : 's'} left`;
+}
+
 export function exerciseOf(exercises, exId) {
   return exercises[exId] || { id: exId, name: exId, kind: 'weight', primary: [], secondary: [], equipment: 'other', missing: true };
 }
@@ -34,7 +46,7 @@ export function entryStats(sets, ex, formula) {
     st.maxReps = Math.max(st.maxReps, r);
     st.topW = Math.max(st.topW, w);
     st.bestSetVol = Math.max(st.bestSetVol, w * r);
-    const est = ex.kind === 'weight' ? e1rm(w, r, formula) || 0 : 0;
+    const est = ex.kind === 'weight' ? e1rm(w, effortReps(s), formula) || 0 : 0;
     st.e1rm = Math.max(st.e1rm, est);
     const score = ex.kind === 'weight' ? w * 1000 + r : r * 1000 + w;
     if (score > bestScore) { bestScore = score; st.bestSet = s; }
@@ -172,6 +184,19 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
   }
   const top = Math.max(...work.map((s) => s.w || 0));
   const topSets = work.filter((s) => (s.w || 0) === top);
+  // reps in reserve logged on every top set: go heavier when the reps you had left would have
+  // reached the top of the range (with at least 2 to spare), or 3+ left with no range
+  if (top > 0 && topSets.length && topSets.every((s) => s.rir != null)) {
+    const could = max ? topSets.every((s) => (s.r || 0) + s.rir >= max && s.rir >= 2) : topSets.every((s) => s.rir >= 3);
+    const already = max && topSets.every((s) => (s.r || 0) >= max);
+    if (could && !already) {
+      return {
+        sets: work.map((s) => ({ w: (s.w || 0) === top ? top + incKg : s.w, r: min || s.r })),
+        kind: 'up',
+        note: max ? `Heavier: with the reps you had left, you could have hit ${max} on every set` : 'Heavier: you had 3+ reps left on every set last time',
+      };
+    }
+  }
   if (top > 0 && max && topSets.every((s) => (s.r || 0) >= max)) {
     return {
       sets: work.map((s) => ({ w: (s.w || 0) === top ? top + incKg : s.w, r: min || Math.max(1, max - 4) })),

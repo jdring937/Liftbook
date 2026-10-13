@@ -28,7 +28,7 @@ export function defaultState() {
     settings: {
       unit: 'lb', rest: 120, formula: 'brzycki', weekStart: 0, theme: 'system',
       keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, bodySex: 'male', lastBackup: null,
-      deloadUntil: null, lastDeload: null,
+      deloadUntil: null, lastDeload: null, effortDefault: false, effortScale: 'rir',
     },
     custom: {},
     templates: [],
@@ -206,6 +206,7 @@ export function startWorkout({ template = null, programId = null, programPos = n
     start: Date.now(), end: null, note: '',
     exercises: template ? template.items.map((i) => newEntry(i.exId, deloadActive() ? { ...i, sets: Math.max(1, Math.ceil((i.sets || 3) / 2)) } : i)) : [],
     deload: deloadActive() || undefined,
+    effort: template && template.effort != null ? template.effort : !!state.settings.effortDefault,
   };
   update((s) => ({ ...s, active: w, rest: null }));
   return w;
@@ -419,7 +420,7 @@ export const photoBlob = (id, thumb = false) => idbGet((thumb ? 'pt:' : 'ph:') +
 
 export function exportCSV(exercises) {
   const unit = state.settings.unit;
-  const rows = [['date', 'workout', 'exercise', 'set', 'type', `weight_${unit}`, 'reps', 'seconds', 'duration_min']];
+  const rows = [['date', 'workout', 'exercise', 'set', 'type', `weight_${unit}`, 'reps', 'seconds', 'reps_in_reserve', 'duration_min']];
   const conv = (kg) => (kg == null ? '' : Math.round((unit === 'lb' ? kg / 0.45359237 : kg) * 100) / 100);
   const sorted = [...state.workouts].sort((a, b) => a.start - b.start);
   for (const w of sorted) {
@@ -429,7 +430,7 @@ export function exportCSV(exercises) {
       e.sets.forEach((s, i) => {
         if (!s.done) return;
         rows.push([new Date(w.start).toISOString(), w.name, ex ? ex.name : e.exId, i + 1,
-          { n: 'normal', w: 'warmup', d: 'drop', f: 'failure' }[s.type] || 'normal', conv(s.w), s.r ?? '', s.t ?? '', dur]);
+          { n: 'normal', w: 'warmup', d: 'drop', f: 'failure' }[s.type] || 'normal', conv(s.w), s.r ?? '', s.t ?? '', s.rir ?? '', dur]);
       });
     }
   }

@@ -34,6 +34,30 @@ function Thumb({ p, onClick, sel }) {
   );
 }
 
+// Hand photos to the iPhone share sheet, where "Save Image" puts them in the Photos app.
+// A web app can't write to the Photos library directly.
+export async function saveToPhotos(photos) {
+  const files = [];
+  for (const p of photos) {
+    const b = await photoBlob(p.id);
+    if (b) files.push(new File([b], `liftbook-${new Date(p.t).toISOString().slice(0, 10)}-${p.pose}.jpg`, { type: 'image/jpeg' }));
+  }
+  if (!files.length) return;
+  try {
+    if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files }); return; }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+  }
+  // fallback: download each file
+  for (const f of files) {
+    const url = URL.createObjectURL(f);
+    const a = document.createElement('a');
+    a.href = url; a.download = f.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+}
+
 function bodyweightNear(t) {
   const w = getState().body.filter((b) => b.kind === 'weight' && Math.abs(b.t - t) < 4 * DAY);
   if (!w.length) return null;
@@ -57,6 +81,7 @@ function Viewer({ p, close }) {
         <div class="ph-full">{url && <img src={url} alt={`${POSE_NAME[p.pose]} progress photo from ${fmtDateYear(p.t)}`} />}</div>
         {bw && <p class="small muted">Bodyweight that week: {round(fromKg(bw, s.settings.unit), 1)} {s.settings.unit}</p>}
         <div class="stack-8">
+          <button class="btn" onClick={() => saveToPhotos([p])}><Icon name="share" size={18} /> Save to Photos app</button>
           <button class="btn" onClick={() => { close(); push('compare', { after: p.id }); }}><Icon name="swap" size={18} /> Compare with another photo</button>
           <button class="btn btn-ghost danger" onClick={async () => {
             if (await confirmSheet({ title: 'Delete this photo?', body: 'It’s removed from this phone for good.', confirm: 'Delete photo', danger: true })) { await deletePhoto(p.id); close(); toast('Photo deleted'); }
@@ -104,7 +129,10 @@ export function PhotosPanel({ s }) {
       {s.photos.length > 0 && <Chips options={[['all', 'All'], ...POSES]} value={pose} onChange={(v) => { mem.pose = v; setPose(v); }} />}
       {days.map((d) => (
         <section key={d.k}>
-          <h2 class="h-sec ph-day">{fmtDateYear(d.t)}</h2>
+          <div class="row-between ph-day-head">
+            <h2 class="h-sec ph-day">{fmtDateYear(d.t)}</h2>
+            <button class="link small" onClick={() => saveToPhotos(d.items)}><Icon name="share" size={15} /> Save to Photos</button>
+          </div>
           <div class="ph-grid">{d.items.map((p) => <Thumb key={p.id} p={p} onClick={() => viewer(p)} />)}</div>
         </section>
       ))}
@@ -114,7 +142,7 @@ export function PhotosPanel({ s }) {
           <p class="muted">Take front, side and back photos every few weeks in the same spot and light. When you take a new one, the camera shows a faint outline of your last photo so you can line up the same pose.</p>
         </div>
       )}
-      <p class="small muted">Photos stay on this phone. They aren’t in the regular backup; export them separately in Settings.</p>
+      <p class="small muted">Photos are kept privately inside Liftbook on this phone, not in your Photos app or iCloud. Tap “Save to Photos” on any day or photo to copy it there. They aren’t in the regular backup; export them in Settings, and note that removing the app from your Home Screen deletes them.</p>
     </div>
   );
 }
@@ -132,6 +160,7 @@ export function CameraScreen() {
   const [count, setCount] = useState(0);
   const [err, setErr] = useState(null);
   const [shot, setShot] = useState(null); // { canvas, url }
+  const [session, setSession] = useState([]); // photos taken on this screen
   const lastSame = [...s.photos].filter((p) => p.pose === pose).sort((a, b) => b.t - a.t)[0];
   const ghostUrl = usePhotoURL(lastSame && lastSame.id);
   const takenToday = s.photos.filter((p) => new Date(p.t).toDateString() === new Date().toDateString()).map((p) => p.pose);
@@ -178,8 +207,9 @@ export function CameraScreen() {
   };
   const save = async () => {
     const v = await makeVersions(shot.canvas);
-    await addPhoto({ t: Date.now(), pose, w: v.w, h: v.h }, v.full, v.thumb);
-    toast(`${POSE_NAME[pose]} photo saved`);
+    const id = await addPhoto({ t: Date.now(), pose, w: v.w, h: v.h }, v.full, v.thumb);
+    setSession((x) => [...x, { id, t: Date.now(), pose }]);
+    toast(`${POSE_NAME[pose]} photo saved in Liftbook`);
     setShot(null);
     const next = POSES.map(([k]) => k).find((k) => k !== pose && !takenToday.includes(k));
     if (next) setPose(next);
@@ -231,6 +261,9 @@ export function CameraScreen() {
                 </label>
               )}
             </div>
+            {session.length > 0 && (
+              <button class="btn full" onClick={() => saveToPhotos(session)}><Icon name="share" size={18} /> Also save {session.length === 1 ? 'this photo' : `these ${session.length} photos`} to your Photos app</button>
+            )}
             <p class="small muted">Same spot, same light, same distance each time. Line yourself up with the outline, then use the timer and prop the phone up.</p>
           </>
         )}

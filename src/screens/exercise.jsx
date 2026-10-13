@@ -55,10 +55,11 @@ function metricsFor(kind) {
   return [['maxReps', 'Most reps'], ['reps', 'Total reps'], ['sets', 'Sets']];
 }
 
-function setText(s, ex, unit) {
+function setText(s, ex, unit, scale = 'rir') {
+  const eff = s.rir != null ? ` ${scale === 'rpe' ? `@${10 - s.rir}` : `(${s.rir >= 5 ? '5+' : s.rir} left)`}` : '';
   if (ex.kind === 'time') return (s.w ? `${fmtNum(wNum(s.w, unit, 2))}×` : '') + fmtSecs(s.t);
-  if (ex.kind === 'reps') return s.w ? `+${fmtNum(wNum(s.w, unit, 2))}×${s.r}` : `${s.r}`;
-  return `${fmtNum(wNum(s.w, unit, 2))}×${s.r}`;
+  if (ex.kind === 'reps') return (s.w ? `+${fmtNum(wNum(s.w, unit, 2))}×${s.r}` : `${s.r}`) + eff;
+  return `${fmtNum(wNum(s.w, unit, 2))}×${s.r}${eff}`;
 }
 
 export function ExerciseScreen({ id }) {
@@ -136,7 +137,7 @@ export function ExerciseScreen({ id }) {
               {points.length
                 ? <LineChart points={points} fmt={fmt} fmtAxis={(v) => fmtNum(v, 0)} tipLabel={(p) => fmtDateYear(p.x) + (p.pr ? ', PR' : '')} zero={metric === 'reps' || metric === 'sets'} />
                 : <p class="muted pad-x">No sessions in this range.</p>}
-              {metric === 'e1rm' && <p class="small muted">Estimated with the {formula === 'epley' ? 'Epley' : 'Brzycki'} formula from your best set each session. Yellow dots are sessions with a record.</p>}
+              {metric === 'e1rm' && <p class="small muted">Estimated with the {formula === 'epley' ? 'Epley' : 'Brzycki'} formula from your best set each session{all.some((h) => h.setList.some((x) => x.rir != null)) ? '; sets with effort logged use reps + reps left' : ''}. Yellow dots are sessions with a record. <Why id={all.some((h) => h.setList.some((x) => x.rir != null)) ? 'effort' : 'e1rm'} /></p>}
             </section>
 
             {ex.kind === 'weight' && <TrendLine st={liftStatus(all.filter((h) => h.e1rm > 0).map((h) => ({ t: h.t, v: h.e1rm })))} />}
@@ -187,7 +188,7 @@ export function ExerciseScreen({ id }) {
                       <span class="sess-d">{fmtDateYear(h.t)}</span>
                       <span class="small muted">{plural(h.setList.length, 'set')}</span>
                     </div>
-                    <div class="sess-sets num">{h.setList.map((st, i) => <span key={i}>{setText(st, ex, unit)}</span>)}</div>
+                    <div class="sess-sets num">{h.setList.map((st, i) => <span key={i}>{setText(st, ex, unit, s.settings.effortScale)}</span>)}</div>
                     {h.note && <p class="sess-note small">{h.note}</p>}
                   </div>
                 ))}
