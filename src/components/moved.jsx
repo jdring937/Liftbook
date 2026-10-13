@@ -2,7 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { movedTotals, comparisons, countText, PERIODS, PERIOD_PHRASE } from '../lib/moved.js';
 import { fmtW, plural } from '../lib/util.js';
 
-const mem = { period: 'week', k: 0 };
+const mem = { period: 'month', k: 0 };
 
 // Total weight moved over a few time frames, shown as everyday objects (tap for another one)
 export function MovedCard({ workouts, exercises, unit, weekStart }) {

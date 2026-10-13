@@ -4,6 +4,7 @@ import { exerciseOf, workoutSummary, buildPRIndex, entryStats } from '../lib/cal
 import { startOfMonth, addMonths, addDays, startOfDay, fmtMonth, fmtDateLong, fmtDuration, fmtW, fmtNum, wNum, fmtSecs, plural } from '../lib/util.js';
 import { Icon, push, openSheet, confirmSheet, toast, Empty } from '../ui.jsx';
 import { newPastWorkout } from './workout.jsx';
+import { MovedCard } from '../components/moved.jsx';
 
 export function bestSetText(st, ex, unit) {
   const b = st.bestSet;
@@ -152,7 +153,8 @@ export function HistoryScreen() {
           <strong>{plural(list.length, 'workout')}</strong>, <strong>{plural(tot.sets, 'set')}</strong>, <strong>{fmtW(tot.vol, unit)}</strong> lifted in {new Date(month).toLocaleDateString('en-US', { month: 'long' })}
         </p>
       )}
-      <div class="stack-12">
+      {s.workouts.length > 0 && <MovedCard workouts={s.workouts} exercises={exercises} unit={unit} weekStart={weekStart} />}
+      <div class="stack-12 mt-16">
         {list.map((w) => <WorkoutCard key={w.id} w={w} exercises={exercises} unit={unit} formula={formula} pr={prIdx[w.id]} />)}
       </div>
       {!list.length && (

@@ -854,3 +854,10 @@ input[type='range'] { width: 100%; accent-color: var(--blue); min-height: 32px; 
 .effort-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); }
 .effort-toggle > span { display: flex; flex-direction: column; gap: 2px; }
 .effort-toggle .why { font-size: 13px; padding: 0; }
+
+.goals-sum { margin-top: 20px; }
+
+.next-card + .insights, .resume + .insights { margin-top: 12px; }
+.insights + .week { margin-top: 0; }
+.next-card ~ .week, .insights ~ .week { margin-top: 12px; }
+.insights-more { align-self: flex-start; padding: 2px 2px 0; }

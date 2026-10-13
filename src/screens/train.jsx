@@ -4,10 +4,10 @@ import { exerciseOf, workoutSummary } from '../lib/calc.js';
 import { startOfWeek, addDays, startOfDay, daysAgo, fmtW, fmtTime, plural } from '../lib/util.js';
 import { Icon, push, openSheet, confirmSheet, toast, plateVar } from '../ui.jsx';
 import { unlockAudio } from './workout.jsx';
-import { MovedCard } from '../components/moved.jsx';
 import { timeboxSheet, useEstimate, minText } from '../components/timebox.jsx';
 import { Insights } from '../components/insights.jsx';
 import { GoalsSummary } from './goals.jsx';
+import { openProgress } from './progress.jsx';
 
 export function begin(opts) {
   unlockAudio();
@@ -134,10 +134,6 @@ export function TrainScreen() {
         </button>
       )}
 
-      <Insights s={s} exercises={exercises} />
-      <WeekStrip workouts={s.workouts} weekStart={s.settings.weekStart} unit={s.settings.unit} exercises={exercises} />
-      {s.workouts.length > 0 && <MovedCard workouts={s.workouts} exercises={exercises} unit={s.settings.unit} weekStart={s.settings.weekStart} />}
-
       {program && (
         <section class="next-card" style={{ '--plate': plateVar(nextT && nextT.color) }}>
           <div class="next-top">
@@ -167,7 +163,8 @@ export function TrainScreen() {
         </section>
       )}
 
-      <GoalsSummary s={s} exercises={exercises} />
+      <Insights s={s} exercises={exercises} max={1} onMore={() => openProgress('goals')} />
+      <WeekStrip workouts={s.workouts} weekStart={s.settings.weekStart} unit={s.settings.unit} exercises={exercises} />
 
       <div class="sec-head">
         <h2 class="h-sec">Your workouts</h2>
@@ -186,6 +183,7 @@ export function TrainScreen() {
         </div>
       )}
       <button class="btn btn-soft full mt-16" onClick={() => begin({})}><Icon name="plus" size={20} /> Start an empty workout</button>
+      <GoalsSummary s={s} exercises={exercises} />
     </div>
   );
 }

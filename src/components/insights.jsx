@@ -24,7 +24,7 @@ function Card({ kind, icon, title, children, actions, onDismiss }) {
 }
 
 // Deload, decline, stall and pain nudges
-export function Insights({ s, exercises, max = 3 }) {
+export function Insights({ s, exercises, max = 3, onMore = null }) {
   const now = Date.now();
   const ins = useMemo(() => insights(s, exercises, now), [s.workouts, exercises, s.settings.formula, s.settings.deloadUntil, s.settings.lastDeload]);
   const dis = s.meta.dismissed || {};
@@ -83,5 +83,11 @@ export function Insights({ s, exercises, max = 3 }) {
     );
   }
   if (!cards.length) return null;
-  return <div class="insights">{cards.slice(0, max)}</div>;
+  const extra = cards.length - max;
+  return (
+    <div class="insights">
+      {cards.slice(0, max)}
+      {extra > 0 && onMore && <button class="link insights-more" onClick={onMore}>{extra} more {extra === 1 ? 'tip' : 'tips'} in Progress <Icon name="right" size={16} /></button>}
+    </div>
+  );
 }

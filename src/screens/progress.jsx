@@ -5,7 +5,7 @@ import {
   RANGES, rangeBounds, trendSeries, muscleStats, groupStats, heatLevel, HEAT_LABELS, inRange, exerciseHistory, exerciseOf,
 } from '../lib/calc.js';
 import { fmtNum, compact, fmtDateShort, fmtMonthShort, daysAgo, fmtW, wNum, plural, fromKg } from '../lib/util.js';
-import { Icon, Chips, Seg, push, openSheet, Empty } from '../ui.jsx';
+import { Icon, Chips, Seg, push, openSheet, Empty, setTab } from '../ui.jsx';
 import { BarChart, Radar, Sparkline } from '../components/charts.jsx';
 import { BodyFigure } from '../components/body.jsx';
 import { GoalsPanel } from './goals.jsx';
@@ -199,6 +199,9 @@ function ExerciseList({ s, exercises, bounds }) {
     </section>
   );
 }
+
+// open Progress on a given section (used by links from other tabs)
+export function openProgress(seg) { mem.seg = seg; setTab('progress'); }
 
 export function ProgressScreen() {
   const s = useStore();
