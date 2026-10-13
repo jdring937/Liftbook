@@ -44,7 +44,7 @@ export function Insights({ s, exercises, max = 3 }) {
       <Card key="deload" kind="warn" icon="arrowDown" title="Time for a lighter week?" onDismiss={() => dismiss('deload:' + weekKey(now))}
         actions={<><button class="btn btn-primary sm" onClick={() => { startDeload(7); toast('Deload week started'); }}>Start a deload week</button><Why id="deload" /></>}>
         {ins.declining.length >= 2
-          ? <>{listNames(names)} have trended down for 3 sessions. Several lifts dropping together usually means fatigue rather than lost strength.</>
+          ? <>{listNames(names)} have trended down for 3 sessions. Several lifts dropping together often points to accumulated fatigue rather than lost strength.</>
           : <>{names[0]} has trended down for 3 sessions, and you’ve trained {ins.streak} weeks straight.</>}
       </Card>,
     );

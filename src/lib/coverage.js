@@ -43,8 +43,8 @@ export function planCoverage(sessions, exercises) {
   const mod = MAJOR.filter((k) => m[k].sets >= 4 && m[k].sets < 10);
   const high = MUSCLES.map(([k]) => k).filter((k) => m[k].sets > 20);
   if (gaps.length) findings.push({ kind: 'gap', title: `Not trained: ${names(gaps)}`, body: 'No sets for these muscles in a typical week.', why: 'volume' });
-  if (low.length) findings.push({ kind: 'low', title: `Low: ${names(low)}`, body: 'Under 4 sets a week. Even a few more hard sets usually make a measurable difference.', why: 'volume' });
-  if (mod.length) findings.push({ kind: 'mod', title: `Moderate: ${names(mod)}`, body: '4–9 sets a week. Fine for maintaining or for strength; around 10+ is a common target for growth.', why: 'volume' });
+  if (low.length) findings.push({ kind: 'low', title: `Low: ${names(low)}`, body: 'Under 4 sets a week. This is where each added hard set helps most.', why: 'volume' });
+  if (mod.length) findings.push({ kind: 'mod', title: `Moderate: ${names(mod)}`, body: '4–9 sets a week. Enough to build muscle and strength; 10 or more tends to give more growth.', why: 'volume' });
   if (high.length) findings.push({ kind: 'high', title: `High: ${high.map((k) => `${MUSCLE_NAME[k]} (${r1(m[k].sets)})`).join(', ')}`, body: 'Over 20 sets a week. Gains tend to taper off past this, so these sets may be better spent elsewhere.', why: 'volume' });
   const ratio = (a, b) => (b ? a / b : Infinity);
   if (push + pull >= 6) {

@@ -54,7 +54,7 @@ function TimeboxSheet({ t, close, onStart }) {
           <p class={'tb-est' + (res.fits ? '' : ' warn')}>
             {res.fits ? <>New estimate: <strong>about {minText(res.est)}</strong></> : <>The shortest sensible version is about <strong>{minText(res.est)}</strong>.</>}
           </p>
-          <p class="small muted">Main lifts keep their sets longest. Accessories are trimmed first, repeats of a muscle you’ve already trained are dropped, and isolation moves get shorter rest. <Why id="timeEfficient" /></p>
+          <p class="small muted">Compound lifts keep their sets longest. Isolation moves get shorter rest, accessories that repeat a muscle you’ve already trained are dropped, and accessory sets are trimmed before compound sets. <Why id="timeEfficient" /></p>
         </>
       )}
       <button class="btn btn-primary full mt-16" disabled={!res.items.length} onClick={() => { close(); onStart(fitsAlready ? t : { ...t, items: res.items }); }}>

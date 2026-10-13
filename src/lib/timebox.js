@@ -1,9 +1,9 @@
 // Fit a workout into a time budget.
 // Estimate: each set takes its working time plus rest, plus a little setup per exercise,
 // scaled by how long your past sessions actually took compared with the same estimate.
-// Trimming follows time-efficient training guidance (Iversen et al. 2021): keep multi-joint lifts
-// longest, trim accessories first, drop accessories that repeat a muscle already trained, and
-// shorten rest on isolation exercises (compound lifts keep at least 2 minutes).
+// Loosely informed by Iversen et al. 2021 (prioritise multi-joint lifts). The trimming order and
+// rest caps are app heuristics: shorten isolation rest, drop accessories that repeat a muscle,
+// trim accessory sets before compound sets (compound lifts keep at least 2 minutes' rest).
 import { isWork } from './calc.js';
 
 const ISOLATION_RE = /curl|raise|fly|flye|crossover|extension|skull|pushdown|push down|kickback|face pull|shrug|crunch|calf|rear delt|wrist|external rotation|abduction|adduction|pullover|straight-arm|plank|dead bug|twist|woodchop|pallof|rollout|hang|bridge|sit up/i;
