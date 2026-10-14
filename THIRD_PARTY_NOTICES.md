@@ -1,6 +1,6 @@
 # Third-party notices
 
-Liftbook bundles the following open-source software. Their licenses permit commercial use; these notices must be kept with the app.
+Swellness bundles the following open-source software. Their licenses permit commercial use; these notices must be kept with the app.
 
 ## Preact
 
