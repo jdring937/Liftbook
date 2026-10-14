@@ -15,7 +15,7 @@ A personal strength training log that runs as an iPhone Home Screen web app. It 
 
 ## Install on iPhone
 
-Open https://jdring937.github.io/Liftbook/ in Safari, tap Share, then Add to Home Screen. Open it once while online; after that it works offline.
+Open https://jdring937.github.io/swellness/ in Safari, tap Share, then Add to Home Screen. Open it once while online; after that it works offline.
 
 ## Develop
 

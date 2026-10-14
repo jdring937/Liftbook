@@ -3,10 +3,12 @@ import { BUILTIN_EXERCISES } from './data/exercises.js';
 import { uid, startOfDay } from './lib/util.js';
 import { isWork } from './lib/calc.js';
 
-// Storage keys keep the app's original name so data saved before the rename to Swellness still loads
-const DB_NAME = 'liftbook';
+const DB_NAME = 'swellness';
 const KEY = 'state';
-const LS_KEY = 'liftbook-state';
+const LS_KEY = 'swellness-state';
+// The app was called Liftbook before; data saved under the old names is copied over once
+const OLD_DB_NAME = 'liftbook';
+const OLD_LS_KEY = 'liftbook-state';
 export const SCHEMA = 1;
 
 export const TEMPLATE_COLORS = ['red', 'blue', 'yellow', 'green', 'white'];
@@ -126,12 +128,50 @@ function migrate(s) {
   };
 }
 
+// Open the old database only if it exists (aborting the upgrade means a missing one isn't created)
+function openOldDb() {
+  return new Promise((res) => {
+    let r;
+    try { r = indexedDB.open(OLD_DB_NAME, 1); } catch (e) { res(null); return; }
+    r.onupgradeneeded = () => { try { r.transaction.abort(); } catch (e) { /* ignore */ } };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => res(null);
+    r.onblocked = () => res(null);
+  });
+}
+// Copy everything (state and photo images) from the old database into the new one
+async function copyOldData() {
+  const old = await openOldDb();
+  if (!old) return null;
+  try {
+    if (!old.objectStoreNames.contains('kv')) return null;
+    const rows = await new Promise((res, rej) => {
+      const out = [];
+      const req = old.transaction('kv', 'readonly').objectStore('kv').openCursor();
+      req.onsuccess = () => { const c = req.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); };
+      req.onerror = () => rej(req.error);
+    });
+    const st = rows.find(([k]) => k === KEY);
+    if (!st) return null;
+    for (const [k, v] of rows) if (k !== KEY) await idbSet(k, v);
+    return st[1];
+  } catch (e) {
+    return null;
+  } finally {
+    old.close();
+  }
+}
+
 export let storageMode = 'indexeddb';
 export async function loadState() {
   let s = null;
   try { s = await idbGet(KEY); } catch (e) { storageMode = 'localstorage'; }
+  if (!s && storageMode === 'indexeddb') s = await copyOldData();
   if (!s) {
-    try { const raw = localStorage.getItem(LS_KEY); if (raw) s = JSON.parse(raw); } catch (e) { /* ignore */ }
+    try {
+      const raw = localStorage.getItem(LS_KEY) || localStorage.getItem(OLD_LS_KEY);
+      if (raw) s = JSON.parse(raw);
+    } catch (e) { /* ignore */ }
   }
   state = s ? migrate(s) : defaultState();
   saveNow();
