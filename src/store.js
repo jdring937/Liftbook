@@ -3,6 +3,7 @@ import { BUILTIN_EXERCISES } from './data/exercises.js';
 import { uid, startOfDay } from './lib/util.js';
 import { isWork } from './lib/calc.js';
 
+// Storage keys keep the app's original name so data saved before the rename to Swellness still loads
 const DB_NAME = 'liftbook';
 const KEY = 'state';
 const LS_KEY = 'liftbook-state';
@@ -344,11 +345,11 @@ export function stopRest() {
 // ---------- backup ----------
 // Photos are kept out of the JSON backup (they have their own export) so backups stay small
 export function exportJSON() {
-  return JSON.stringify({ app: 'liftbook', exported: new Date().toISOString(), ...state, photos: undefined, rest: null }, null, 1);
+  return JSON.stringify({ app: 'swellness', exported: new Date().toISOString(), ...state, photos: undefined, rest: null }, null, 1);
 }
 export function importJSON(text) {
   const obj = JSON.parse(text);
-  if (!obj || !Array.isArray(obj.workouts) || !Array.isArray(obj.templates)) throw new Error('This file is not a Liftbook backup.');
+  if (!obj || !Array.isArray(obj.workouts) || !Array.isArray(obj.templates)) throw new Error('This file is not a Swellness backup.');
   delete obj.app; delete obj.exported;
   obj.photos = state.photos;
   setState(migrate(obj));

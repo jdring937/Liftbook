@@ -6,7 +6,7 @@ function EvidenceBody({ e }) {
   return (
     <>
       <p class="ev-summary">{e.summary}</p>
-      {e.app && <div class="ev-app"><strong>In Liftbook</strong><p>{e.app}</p></div>}
+      {e.app && <div class="ev-app"><strong>In Swellness</strong><p>{e.app}</p></div>}
       <div class="ev-refs">
         <span class="small muted">Sources</span>
         <ol>

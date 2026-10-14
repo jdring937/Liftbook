@@ -1,4 +1,4 @@
-# Liftbook
+# Swellness
 
 A personal strength training log that runs as an iPhone Home Screen web app. It works offline and keeps all data on the device.
 

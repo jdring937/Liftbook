@@ -44,11 +44,11 @@ export function SettingsScreen() {
   const stamp = new Date().toISOString().slice(0, 10);
 
   const backup = async () => {
-    const ok = await shareOrDownload(exportJSON(), `liftbook-backup-${stamp}.json`, 'application/json');
+    const ok = await shareOrDownload(exportJSON(), `swellness-backup-${stamp}.json`, 'application/json');
     if (ok) { setSettings({ lastBackup: Date.now() }); toast('Backup exported'); }
   };
   const csv = async () => {
-    const ok = await shareOrDownload(exportCSV(allExercises(s)), `liftbook-sets-${stamp}.csv`, 'text/csv');
+    const ok = await shareOrDownload(exportCSV(allExercises(s)), `swellness-sets-${stamp}.csv`, 'text/csv');
     if (ok) toast('CSV exported');
   };
   const restore = (e) => {
@@ -144,7 +144,7 @@ export function SettingsScreen() {
             <Row label="Export progress photos" sub={s.photos.length ? `${plural(s.photos.length, 'photo')} as a .zip file` : 'No photos yet'} onClick={s.photos.length ? async () => {
               toast('Preparing photos…');
               const { blob, count } = await exportPhotosZip();
-              if (await shareOrDownload(blob, `liftbook-photos-${stamp}.zip`, 'application/zip')) toast(`Exported ${plural(count, 'photo')}`);
+              if (await shareOrDownload(blob, `swellness-photos-${stamp}.zip`, 'application/zip')) toast(`Exported ${plural(count, 'photo')}`);
             } : undefined}>
               <Icon name="share" size={20} class="muted" />
             </Row>

@@ -40,7 +40,7 @@ export async function saveToPhotos(photos) {
   const files = [];
   for (const p of photos) {
     const b = await photoBlob(p.id);
-    if (b) files.push(new File([b], `liftbook-${new Date(p.t).toISOString().slice(0, 10)}-${p.pose}.jpg`, { type: 'image/jpeg' }));
+    if (b) files.push(new File([b], `swellness-${new Date(p.t).toISOString().slice(0, 10)}-${p.pose}.jpg`, { type: 'image/jpeg' }));
   }
   if (!files.length) return;
   try {
@@ -142,7 +142,7 @@ export function PhotosPanel({ s }) {
           <p class="muted">Take front, side and back photos every few weeks in the same spot and light. When you take a new one, the camera shows a faint outline of your last photo so you can line up the same pose.</p>
         </div>
       )}
-      <p class="small muted">Photos are kept privately inside Liftbook on this phone, not in your Photos app or iCloud. Tap “Save to Photos” on any day or photo to copy it there. They aren’t in the regular backup; export them in Settings, and note that removing the app from your Home Screen deletes them.</p>
+      <p class="small muted">Photos are kept privately inside Swellness on this phone, not in your Photos app or iCloud. Tap “Save to Photos” on any day or photo to copy it there. They aren’t in the regular backup; export them in Settings, and note that removing the app from your Home Screen deletes them.</p>
     </div>
   );
 }
@@ -209,7 +209,7 @@ export function CameraScreen() {
     const v = await makeVersions(shot.canvas);
     const id = await addPhoto({ t: Date.now(), pose, w: v.w, h: v.h }, v.full, v.thumb);
     setSession((x) => [...x, { id, t: Date.now(), pose }]);
-    toast(`${POSE_NAME[pose]} photo saved in Liftbook`);
+    toast(`${POSE_NAME[pose]} photo saved in Swellness`);
     setShot(null);
     const next = POSES.map(([k]) => k).find((k) => k !== pose && !takenToday.includes(k));
     if (next) setPose(next);
@@ -362,13 +362,13 @@ export async function exportPhotosZip() {
     files.push({ name, data });
     manifest.push({ ...p, file: name });
   }
-  files.unshift({ name: 'manifest.json', data: new TextEncoder().encode(JSON.stringify({ app: 'liftbook-photos', version: 1, photos: manifest }, null, 1)) });
+  files.unshift({ name: 'manifest.json', data: new TextEncoder().encode(JSON.stringify({ app: 'swellness-photos', version: 1, photos: manifest }, null, 1)) });
   return { blob: makeZip(files), count: manifest.length };
 }
 
 export async function importPhotosZip(file) {
   const entries = readZip(await file.arrayBuffer());
-  if (!entries['manifest.json']) throw new Error('This isn’t a Liftbook photo export.');
+  if (!entries['manifest.json']) throw new Error('This isn’t a Swellness photo export.');
   const m = JSON.parse(new TextDecoder().decode(entries['manifest.json']));
   const have = new Set(getState().photos.map((p) => p.id));
   let n = 0;

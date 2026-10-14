@@ -28,13 +28,13 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Liftbook</title>
+<title>Swellness</title>
 <meta name="description" content="Personal strength training log">
 <meta name="theme-color" content="#14171a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Liftbook">
+<meta name="apple-mobile-web-app-title" content="Swellness">
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -53,8 +53,8 @@ writeFileSync(`${out}/index.html`, html);
 const version = createHash('sha1').update(html).digest('hex').slice(0, 10);
 
 writeFileSync(`${out}/manifest.webmanifest`, JSON.stringify({
-  name: 'Liftbook',
-  short_name: 'Liftbook',
+  name: 'Swellness',
+  short_name: 'Swellness',
   description: 'Personal strength training log',
   start_url: './',
   scope: './',
@@ -70,8 +70,8 @@ writeFileSync(`${out}/manifest.webmanifest`, JSON.stringify({
   ],
 }, null, 2));
 
-writeFileSync(`${out}/sw.js`, `// Liftbook offline cache. Bump comes from the build hash.
-const CACHE = 'liftbook-${version}';
+writeFileSync(`${out}/sw.js`, `// Swellness offline cache. Bump comes from the build hash.
+const CACHE = 'swellness-${version}';
 const FILES = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
