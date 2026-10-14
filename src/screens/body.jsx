@@ -7,6 +7,7 @@ import { LineChart } from '../components/charts.jsx';
 import { Why } from '../components/why.jsx';
 import { GoalCard, goalEditor } from './goals.jsx';
 import { PhotosPanel } from './photos.jsx';
+import { goalProfile } from '../lib/trainingGoal.js';
 
 const mem = { seg: 'weight', site: 'waist', range: 90 };
 const RANGE_OPTS = [[30, '30D'], [90, '90D'], [365, '1Y'], [0, 'All']];
@@ -63,7 +64,7 @@ function WeightPanel({ s, exercises }) {
   const last = trend[trend.length - 1];
   const ago = (days) => { const p = [...trend].reverse().find((x) => x.t <= now - days * DAY); return p && last ? last.v - p.v : null; };
   const d7 = ago(7), d30 = ago(30);
-  const rate = fit && last ? weightRateCheck(fit.b * 7, last.v) : null;
+  const rate = fit && last ? weightRateCheck(fit.b * 7, last.v, goalProfile(s.settings.goal).pace) : null;
   const goal = s.goals.find((g) => g.type === 'bodyweight');
   const f = (kg) => `${round(fromKg(kg, unit), 1)} ${unit}`;
   const delta = (kg) => (kg == null ? '–' : `${kg >= 0 ? '+' : '−'}${round(Math.abs(fromKg(kg, unit)), 1)}`);

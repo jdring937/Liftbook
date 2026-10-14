@@ -75,7 +75,7 @@ export function ExerciseScreen({ id }) {
   const bounds = useMemo(() => rangeBounds(range, s.workouts), [range, s.workouts]);
   const hist = all.filter((h) => h.t >= bounds.start);
   const isW = ['e1rm', 'topW', 'bestSetVol', 'vol'].includes(metric);
-  const points = hist.map((h) => ({
+  const points = hist.filter((h) => metric !== 'e1rm' || h.e1rm > 0).map((h) => ({
     x: h.t, y: isW ? fromKg(h[metric], unit) : h[metric], label: fmtDateShort(h.t),
     pr: !!(prIdx[h.workoutId] && prIdx[h.workoutId].prs[id]),
   }));
@@ -137,7 +137,7 @@ export function ExerciseScreen({ id }) {
               {points.length
                 ? <LineChart points={points} fmt={fmt} fmtAxis={(v) => fmtNum(v, 0)} tipLabel={(p) => fmtDateYear(p.x) + (p.pr ? ', PR' : '')} zero={metric === 'reps' || metric === 'sets'} />
                 : <p class="muted pad-x">No sessions in this range.</p>}
-              {metric === 'e1rm' && <p class="small muted">Estimated with the {formula === 'epley' ? 'Epley' : 'Brzycki'} formula from your best set each session{all.some((h) => h.setList.some((x) => x.rir != null)) ? '; sets with effort logged use reps + reps left' : ''}. Yellow dots are sessions with a record. <Why id={all.some((h) => h.setList.some((x) => x.rir != null)) ? 'effort' : 'e1rm'} /></p>}
+              {metric === 'e1rm' && <p class="small muted">Estimated with the {formula === 'epley' ? 'Epley' : 'Brzycki'} formula from your best set of 12 reps or fewer each session{all.some((h) => h.setList.some((x) => x.rir != null)) ? '; sets with effort logged use reps + reps left' : ''}. Yellow dots are sessions with a record. <Why id={all.some((h) => h.setList.some((x) => x.rir != null)) ? 'effort' : 'e1rm'} /></p>}
             </section>
 
             {ex.kind === 'weight' && <TrendLine st={liftStatus(all.filter((h) => h.e1rm > 0).map((h) => ({ t: h.t, v: h.e1rm })))} />}

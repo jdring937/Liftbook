@@ -195,9 +195,12 @@ export function currentValue(goal, state, exercises) {
 }
 
 // Bodyweight rate check against evidence-based ranges (% of bodyweight per week)
-export function weightRateCheck(perWeekKg, bwKg) {
+export function weightRateCheck(perWeekKg, bwKg, pace = null) {
   if (!perWeekKg || !bwKg) return null;
   const pct = (perWeekKg / bwKg) * 100;
+  // against the main goal's direction, when there is one
+  if (pace === 'loss' && pct > 0.1) return { pct, ok: false, label: 'gaining, but your goal is to lose about 0.5–1% a week' };
+  if (pace === 'gain' && pct < -0.1) return { pct, ok: false, label: 'losing, but your goal is to gain about 0.25–0.5% a week' };
   if (pct < 0) return { pct, ok: pct >= -1, label: pct < -1 ? 'faster than the 0.5–1% a week usually advised for keeping muscle' : pct > -0.5 ? 'gentle (under 0.5% a week)' : 'within the 0.5–1% a week range' };
   return { pct, ok: pct <= 0.5, label: pct > 0.5 ? 'faster than the 0.25–0.5% a week usually advised to limit fat gain' : pct < 0.25 ? 'gentle (under 0.25% a week)' : 'within the 0.25–0.5% a week range' };
 }

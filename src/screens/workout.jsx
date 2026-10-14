@@ -12,6 +12,7 @@ import { openPicker, musclesText } from './pickers.jsx';
 import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
 import { Why } from '../components/why.jsx';
 import { restFor, restIsAuto, autoRest, autoRestWhy } from '../lib/rest.js';
+import { defaultReps } from '../lib/trainingGoal.js';
 const WhyLink = () => <Why id="pain" />;
 
 const TYPE_LABEL = { w: 'W', d: 'D', f: 'F' };
@@ -381,7 +382,7 @@ const REST_OPTIONS = [null, 0, 30, 45, 60, 90, 120, 150, 180, 240, 300];
 export function restLabel(rest, ex, target) {
   const st = getState().settings;
   if (rest != null) return rest ? fmtClock(rest) : 'Off';
-  return restIsAuto(rest, st) ? `Auto ${fmtClock(autoRest(ex, target))}` : `Default ${st.rest ? fmtClock(st.rest) : 'off'}`;
+  return restIsAuto(rest, st) ? `Auto ${fmtClock(autoRest(ex, target, st.goal))}` : `Default ${st.rest ? fmtClock(st.rest) : 'off'}`;
 }
 // opts.ex / opts.target describe the exercise so the automatic option can show its value;
 // opts.noDefault hides the "use default" option (for the fixed timer in Settings)
@@ -397,7 +398,7 @@ export function restSheet(value, onSave, opts = {}) {
           <button key={String(v)} class={'menu-row' + (value === v ? ' on' : '')} onClick={() => { onSave(v); close(); }}>
             {v == null
               ? (auto
-                ? <span>Auto{opts.ex ? ` (${fmtClock(autoRest(opts.ex, opts.target))}, ${autoRestWhy(opts.ex, opts.target)})` : ''}<span class="small muted block">Evidence-based: heavy sets (6 reps or fewer) 3:00, other sets 1:30</span></span>
+                ? <span>Auto{opts.ex ? ` (${fmtClock(autoRest(opts.ex, opts.target, st.goal))}, ${autoRestWhy(opts.ex, opts.target, st.goal)})` : ''}<span class="small muted block">{st.goal === 'strong' ? 'Evidence-based for strength: compound 2:30, heavy sets 3:00, isolation 1:30, holds 1:00' : 'Evidence-based: heavy sets (6 reps or fewer) 3:00, other sets 1:30, holds 1:00'}</span></span>
                 : `Default (${st.rest ? fmtClock(st.rest) : 'off'})`)
               : v === 0 ? 'Off' : fmtClock(v)}
             {value === v && <Icon name="check" size={18} class="ml-auto" />}
@@ -443,7 +444,7 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
 
   const setEntries = (fn) => setW((x) => ({ ...x, exercises: fn(x.exercises) }));
   const addExercises = () => openPicker((ids) => setEntries((list) => [...list, ...ids.map((id) => {
-    const e = newEntry(id, { sets: 3 });
+    const e = newEntry(id, { sets: 3, ...defaultReps(exercises[id], s.settings.goal) });
     if (!isActive) e.sets = e.sets.map((st) => ({ ...st }));
     return e;
   })]));
@@ -453,7 +454,7 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
     if (!isActive) return;
     const ex = exerciseOf(exercises, entry.exId);
     const sec = restFor(entry.rest, ex, entry.target, s.settings);
-    if (sec > 0) startRest(sec, restIsAuto(entry.rest, s.settings) ? autoRestWhy(ex, entry.target) : null);
+    if (sec > 0) startRest(sec, restIsAuto(entry.rest, s.settings) ? autoRestWhy(ex, entry.target, s.settings.goal) : null);
   };
 
   const finish = async () => {

@@ -4,6 +4,7 @@ import { planCoverage, band, MAJOR } from '../lib/coverage.js';
 import { heatLevel, HEAT_LABELS } from '../lib/calc.js';
 import { fmtNum } from '../lib/util.js';
 import { Icon } from '../ui.jsx';
+import { useStore } from '../store.js';
 import { BodyFigure } from './body.jsx';
 import { Why } from './why.jsx';
 
@@ -24,7 +25,8 @@ export function HeatLegend() {
 
 // Body map and findings for a planned week of training
 export function Coverage({ sessions, exercises, sex = 'male', note, children }) {
-  const cov = useMemo(() => planCoverage(sessions, exercises), [sessions, exercises]);
+  const goal = useStore().settings.goal;
+  const cov = useMemo(() => planCoverage(sessions, exercises, goal), [sessions, exercises, goal]);
   const [sel, setSel] = useState(null);
   const [all, setAll] = useState(false);
   const levels = Object.fromEntries(MUSCLES.map(([k]) => [k, heatLevel(cov.muscles[k].sets)]));

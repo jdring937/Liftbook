@@ -32,7 +32,7 @@ export function defaultState() {
       unit: 'lb', rest: 120, formula: 'brzycki', weekStart: 0, theme: 'system',
       keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, bodySex: 'male', lastBackup: null,
       deloadUntil: null, lastDeload: null, effortDefault: false, effortScale: 'rir',
-      restMode: 'evidence', jumpMode: 'auto',
+      restMode: 'evidence', jumpMode: 'auto', goal: null,
     },
     custom: {},
     templates: [],
@@ -44,7 +44,7 @@ export function defaultState() {
     photos: [],
     active: null,
     rest: null,
-    meta: { created: Date.now(), seedCleaned: true, dismissed: {} },
+    meta: { created: Date.now(), seedCleaned: true, dismissed: {}, goalAsked: false },
   };
 }
 
@@ -413,6 +413,12 @@ export function startDeload(days = 7) {
 }
 export function endDeload() {
   update((s) => ({ ...s, settings: { ...s.settings, deloadUntil: null } }));
+}
+export function setTrainingGoal(goal) {
+  update((s) => ({ ...s, settings: { ...s.settings, goal }, meta: { ...s.meta, goalAsked: true } }));
+}
+export function markGoalAsked() {
+  update((s) => ({ ...s, meta: { ...s.meta, goalAsked: true } }));
 }
 export function dismiss(key) {
   update((s) => ({ ...s, meta: { ...s.meta, dismissed: { ...s.meta.dismissed, [key]: Date.now() } } }));

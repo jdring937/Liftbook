@@ -5,6 +5,8 @@ import { Icon, Header, Seg, Toggle, pop, push, confirmSheet, toast } from '../ui
 import { restSheet } from './workout.jsx';
 import { exportPhotosZip, importPhotosZip } from './photos.jsx';
 import { Why } from '../components/why.jsx';
+import { openGoalSheet } from '../components/trainingGoal.jsx';
+import { GOAL_LABEL } from '../lib/trainingGoal.js';
 
 async function shareOrDownload(text, filename, type) {
   const blob = text instanceof Blob ? text : new Blob([text], { type });
@@ -39,7 +41,7 @@ export function Row({ label, sub, children, onClick }) {
 export function RestSetting({ st, why = true }) {
   return (
     <>
-      <Row label="Rest timer" sub={st.restMode === 'fixed' ? 'Same rest for every exercise' : 'Heavy sets (6 reps or fewer) 3:00, others 1:30'}>
+      <Row label="Rest timer" sub={st.restMode === 'fixed' ? 'Same rest for every exercise' : st.goal === 'strong' ? 'Compound 2:30 (3:00 at 6 reps or fewer), isolation 1:30, holds 1:00' : 'Heavy sets (6 reps or fewer) 3:00, others 1:30, holds 1:00'}>
         <Seg options={[['evidence', 'Evidence'], ['fixed', 'Fixed']]} value={st.restMode === 'fixed' ? 'fixed' : 'evidence'} onChange={(v) => setSettings({ restMode: v })} />
       </Row>
       {st.restMode === 'fixed' && (
@@ -55,7 +57,7 @@ export function JumpSetting({ st, why = true }) {
   const auto = st.jumpMode !== 'fixed';
   return (
     <>
-      <Row label="Weight jumps in targets" sub={auto ? 'About 5% lower-body lifts, 2.5% others' : 'Same jump for every exercise'}>
+      <Row label="Weight jumps in targets" sub={auto ? 'About 5% lower-body compound lifts, 2.5% others, after two sessions at the top' : 'Same jump after one session at the top'}>
         <Seg options={[['auto', 'Evidence'], ['fixed', 'Fixed']]} value={auto ? 'auto' : 'fixed'} onChange={(v) => setSettings({ jumpMode: v })} />
       </Row>
       <Row label={auto ? 'Smallest step' : 'Jump'} sub={auto ? 'Jumps round to this, never smaller' : 'Added at the top of your rep range'}>
@@ -114,6 +116,9 @@ export function SettingsScreen() {
         <section>
           <h2 class="h-sec">Training</h2>
           <div class="group">
+            <Row label="Main goal" sub="Sets evidence-based defaults" onClick={() => openGoalSheet(false)}>
+              <span class="muted">{st.goal ? GOAL_LABEL[st.goal] : 'Not set'}</span><Icon name="right" size={18} class="muted" />
+            </Row>
             <Row label="Weight unit" sub="Changes how every weight is shown; nothing is lost">
               <Seg options={[['lb', 'lb'], ['kg', 'kg']]} value={st.unit} onChange={(v) => setSettings({ unit: v })} />
             </Row>

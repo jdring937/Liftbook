@@ -8,7 +8,8 @@ A personal strength training log that runs as an iPhone Home Screen web app. It 
 - Goals with forecasts (lift, reps, bodyweight, measurements, consistency, weekly muscle sets)
 - Routine coverage on the body map, fit-to-time sessions, deload and plateau nudges, pain log
 - Body tab: bodyweight trend, measurements, progress photos with pose overlay and comparison
-- Evidence library behind each recommendation
+- Evidence library behind each recommendation, with evidence-based modes for rest and weight jumps
+- Main training goal (asked once) that sets rep ranges, rest for strength work and bodyweight pace checks
 - History calendar with personal records
 - Training trends, per-exercise estimated 1RM (Brzycki or Epley), and a muscle tracker (body map, radar, table)
 - JSON backup and CSV export

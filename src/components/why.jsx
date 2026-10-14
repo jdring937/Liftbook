@@ -3,8 +3,9 @@ import { EVIDENCE, EVIDENCE_ORDER } from '../data/evidence.js';
 import { Icon, Header, openSheet, pop } from '../ui.jsx';
 import { useStore } from '../store.js';
 import { RestSetting, JumpSetting, EffortSetting } from '../screens/settings.jsx';
+import { GoalBanner } from './trainingGoal.jsx';
 
-const SETTING = { rest: RestSetting, progression: JumpSetting, effort: EffortSetting };
+const SETTING = { rest: RestSetting, progression: JumpSetting, effort: EffortSetting, goal: GoalBanner };
 function SettingInline({ which }) {
   const s = useStore();
   const C = SETTING[which];
@@ -69,7 +70,7 @@ export function EvidenceScreen() {
     <div class="screen-body">
       <Header title="The science" onBack={pop} />
       <div class="pad-16 stack-12">
-        <p class="muted">What the research says behind each recommendation, what the app does with it, and where you’ll see it. Topics marked <span class="ev-badge">Setting</span> have an evidence-based mode you can switch.</p>
+        <p class="muted">What the research says behind each recommendation, what the app does with it, and where you’ll see it. Topics marked <span class="ev-badge">Setting</span> have a setting you can change right there.</p>
         <div class="list">
           {EVIDENCE_ORDER.map((id) => {
             const e = EVIDENCE[id];

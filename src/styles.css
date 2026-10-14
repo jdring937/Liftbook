@@ -874,3 +874,17 @@ input[type='range'] { width: 100%; accent-color: var(--blue); min-height: 32px; 
 .ev-setting > strong { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
 .ev-setting .group { background: var(--surface-2); }
 .ev-badge { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 6px; background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue); font-size: 12px; font-weight: 700; vertical-align: 1px; }
+
+/* ---------- training goal ---------- */
+.tg-list { display: flex; flex-direction: column; gap: 8px; }
+.tg-opt { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1.5px solid transparent; }
+.tg-opt span { color: var(--text-2); }
+.tg-opt.on { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, var(--surface-2)); }
+.tg-changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tg-changes li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
+.tg-changes li svg { flex: none; margin-top: 3px; color: var(--green); }
+.tg-changes .why { font-size: 13px; padding: 0; }
+.tg-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px; background: var(--surface); text-align: left; }
+.tg-banner-l { display: flex; flex-direction: column; gap: 2px; }
+.tg-banner-l strong { font-size: 17px; }
+.tg-banner.empty { border: 1.5px dashed var(--blue); }

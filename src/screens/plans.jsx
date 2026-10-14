@@ -11,6 +11,7 @@ import { restSheet, restLabel } from './workout.jsx';
 import { MUSCLE_FILTERS } from '../data/exercises.js';
 import { ExThumb } from '../components/preview.jsx';
 import { Coverage } from '../components/coverage.jsx';
+import { defaultReps } from '../lib/trainingGoal.js';
 import { programSessions, templateSessions } from '../lib/coverage.js';
 
 const mem = { seg: 'workouts', q: '', filter: null };
@@ -170,8 +171,8 @@ export function TemplateEditor({ id }) {
             );
           })}
         </div>
-        {!t.items.length && <p class="muted">Add the exercises for this workout. Set a rep range and the app suggests a heavier weight once you hit the top of it on every set.</p>}
-        <button class="btn btn-soft full" onClick={() => openPicker((ids) => setT((x) => ({ ...x, items: [...x.items, ...ids.map((exId) => ({ exId, sets: 3, min: 8, max: 12, rest: null }))] })))}>
+        {!t.items.length && <p class="muted">Add the exercises for this workout. Rep ranges start from your training goal; the app suggests a heavier weight once you hit the top of the range (two sessions in a row with Evidence weight jumps).</p>}
+        <button class="btn btn-soft full" onClick={() => openPicker((ids) => setT((x) => ({ ...x, items: [...x.items, ...ids.map((exId) => ({ exId, sets: 3, ...defaultReps(exercises[exId], s.settings.goal), rest: null }))] })))}>
           <Icon name="plus" size={20} /> Add exercises
         </button>
         {t.items.length > 0 && (

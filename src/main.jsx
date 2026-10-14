@@ -14,6 +14,7 @@ import { EvidenceScreen } from './components/why.jsx';
 import { BodyScreen } from './screens/body.jsx';
 import { GoalScreen, GoalsScreen } from './screens/goals.jsx';
 import { CameraScreen, CompareScreen } from './screens/photos.jsx';
+import { openGoalSheet } from './components/trainingGoal.jsx';
 import { fmtClock } from './lib/util.js';
 import { useState } from 'preact/hooks';
 
@@ -76,6 +77,12 @@ function App() {
     mq.addEventListener && mq.addEventListener('change', h);
     return () => mq.removeEventListener && mq.removeEventListener('change', h);
   }, [s.settings.theme]);
+  // ask for a main goal once, if there isn't one yet (skipped in automated browsers)
+  useEffect(() => {
+    if (s.settings.goal || s.meta.goalAsked || navigator.webdriver) return undefined;
+    const t = setTimeout(() => openGoalSheet(true), 700);
+    return () => clearTimeout(t);
+  }, []);
   const covered = u.stack.length > 0;
   useEffect(() => { document.documentElement.classList.toggle('covered', covered); }, [covered]);
   const showMini = s.active && u.tab !== 'train' && !u.stack.some((x) => x.screen === 'workout');

@@ -1,6 +1,7 @@
 // Planned weekly sets per muscle for a workout or program, before you run it.
 // Counting matches the muscle tracker: 1 set for main muscles, 0.5 for helpers.
 import { MUSCLES, MUSCLE_NAME } from '../data/exercises.js';
+import { goalProfile } from './trainingGoal.js';
 
 export const MAJOR = ['chest', 'lats', 'upperBack', 'sideDelts', 'rearDelts', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'abs'];
 const PUSH = ['chest', 'frontDelts', 'triceps'];
@@ -19,7 +20,8 @@ const r1 = (n) => Math.round(n * 10) / 10;
 
 // sessions: [{ name, items: [{ exId, sets }] }] making up one week.
 // exercises: id -> exercise (anything with primary/secondary works, so unsaved guesses can be passed in)
-export function planCoverage(sessions, exercises) {
+export function planCoverage(sessions, exercises, goal = null) {
+  const vol = goalProfile(goal).volume;
   const m = Object.fromEntries(MUSCLES.map(([k]) => [k, { sets: 0, days: 0, ex: {} }]));
   let push = 0, pull = 0, total = 0;
   for (const sess of sessions) {
@@ -44,8 +46,13 @@ export function planCoverage(sessions, exercises) {
   const high = MUSCLES.map(([k]) => k).filter((k) => m[k].sets > 20);
   if (gaps.length) findings.push({ kind: 'gap', title: `Not trained: ${names(gaps)}`, body: 'No sets for these muscles in a typical week.', why: 'volume' });
   if (low.length) findings.push({ kind: 'low', title: `Low: ${names(low)}`, body: 'Under 4 sets a week. This is where each added hard set helps most.', why: 'volume' });
-  if (mod.length) findings.push({ kind: 'mod', title: `Moderate: ${names(mod)}`, body: '4–9 sets a week. Enough to build muscle and strength; 10 or more tends to give more growth.', why: 'volume' });
-  if (high.length) findings.push({ kind: 'high', title: `High: ${high.map((k) => `${MUSCLE_NAME[k]} (${r1(m[k].sets)})`).join(', ')}`, body: 'Over 20 sets a week. Gains tend to taper off past this, so these sets may be better spent elsewhere.', why: 'volume' });
+  const modBody = vol === 'strength' ? '4–9 sets a week. Plenty for strength, which levels off at lower weekly volumes than muscle size.'
+    : vol === 'growth' ? '4–9 sets a week. This builds muscle, but 10 or more tends to give more growth.'
+      : '4–9 sets a week. Solid for general strength and muscle; 10 or more tends to give more growth.';
+  if (mod.length) findings.push({ kind: vol === 'strength' ? 'ok' : 'mod', title: `${vol === 'strength' ? 'Enough for strength' : 'Moderate'}: ${names(mod)}`, body: modBody, why: 'volume' });
+  const highBody = vol === 'strength' ? 'Over 20 sets a week. For strength, extra sets past a moderate volume add little; these may be better spent elsewhere or cut to save time.'
+    : 'Over 20 sets a week. Gains tend to taper off past this, so these sets may be better spent elsewhere.';
+  if (high.length) findings.push({ kind: 'high', title: `High: ${high.map((k) => `${MUSCLE_NAME[k]} (${r1(m[k].sets)})`).join(', ')}`, body: highBody, why: 'volume' });
   const ratio = (a, b) => (b ? a / b : Infinity);
   if (push + pull >= 6) {
     if (ratio(push, pull) > 2) findings.push({ kind: 'balance', title: `More pushing than pulling (${r1(push)} vs ${r1(pull)} sets)`, body: 'Upper-body pushing gets over twice the sets of pulling. A rule of thumb, not a proven ratio.', why: 'balance' });

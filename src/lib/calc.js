@@ -149,15 +149,16 @@ export function pastNotes(workouts, exId, beforeT = Infinity) {
 
 // The two most recent sessions of an exercise, newest first
 export function lastSessionsFor(workouts, exId, n = 2) {
-  const ws = workouts.filter((w) => w.exercises.some((e) => e.exId === exId && e.sets.some(isWork))).sort((a, b) => b.start - a.start).slice(0, n);
+  const ws = workouts.filter((w) => !w.deload && w.exercises.some((e) => e.exId === exId && e.sets.some(isWork))).sort((a, b) => b.start - a.start).slice(0, n);
   return ws.map((w) => ({ t: w.start, sets: w.exercises.filter((e) => e.exId === exId).flatMap((e) => e.sets.filter(isWork)) }));
 }
 
 // Most recent completed sets of an exercise (for the "Previous" column)
+// Deload-week sessions are skipped so targets build on normal training
 export function lastSetsFor(workouts, exId, beforeT = Infinity) {
   let bestW = null;
   for (const w of workouts) {
-    if (w.start >= beforeT) continue;
+    if (w.start >= beforeT || w.deload) continue;
     if (!w.exercises.some((e) => e.exId === exId && e.sets.some(isWork))) continue;
     if (!bestW || w.start > bestW.start) bestW = w;
   }
@@ -202,8 +203,9 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
   if (opts.deload) {
     const half = work.slice(0, Math.max(1, Math.ceil(work.length / 2)));
     return {
-      sets: half.map((s) => ({ w: s.w ?? null, r: ex.kind === 'time' ? undefined : (min || s.r), t: ex.kind === 'time' ? s.t : undefined })),
-      kind: 'deload', note: 'Deload: same weight, stop 3–4 reps short of failure',
+      // same weight, about 3 reps fewer than last time (never above the bottom of the range)
+      sets: half.map((s) => ({ w: s.w ?? null, r: ex.kind === 'time' ? undefined : Math.max(1, Math.min(min || s.r || 1, (s.r || 0) - 3)), t: ex.kind === 'time' ? s.t : undefined })),
+      kind: 'deload', note: 'Deload: same weight, about 3 fewer reps than last time',
     };
   }
   // close to failure without going all the way (about 0–3 reps left); suggested when effort rating is on
@@ -212,22 +214,30 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
     return { sets: work.map((s) => ({ w: s.w ?? null, t: (s.t || 0) + 5 })), kind: 'more', note: '5 seconds longer than last time' };
   }
   if (ex.kind === 'reps') {
-    return { sets: work.map((s) => ({ w: s.w ?? null, r: (s.r || 0) + 1 })), kind: 'more', note: 'One more rep per set than last time', aim };
+    // bodyweight moves: a rep more each time up to the top of the range, then add load or a harder variation
+    if (max && work.every((s) => (s.r || 0) >= max)) {
+      return { sets: work.map((s) => ({ w: s.w ?? null, r: s.r })), kind: 'up', aim, note: `Top of the range: add weight or move to a harder variation, then build back up from ${min || max - 4}` };
+    }
+    return { sets: work.map((s) => ({ w: s.w ?? null, r: max ? Math.min(max, (s.r || 0) + 1) : (s.r || 0) + 1 })), kind: 'more', note: 'One more rep per set than last time', aim };
   }
   const top = Math.max(...work.map((s) => s.w || 0));
   const topSets = work.filter((s) => (s.w || 0) === top);
   const jump = weightJump(top, ex, incKg, opts.jumpMode);
-  const jumpNote = opts.jumpMode === 'auto' && top ? ` (+${Math.round((jump / top) * 1000) / 10}%)` : '';
+  const jumpPct = top ? Math.round((jump / top) * 1000) / 10 : 0;
+  const jumpNote = opts.jumpMode === 'auto' && top ? (jumpPct > 10 ? ` (+${jumpPct}%, your smallest step)` : ` (+${jumpPct}%)`) : '';
   // reps in reserve logged on every top set: go heavier when the reps you had left would have
   // reached the top of the range (with at least 2 to spare), or 3+ left with no range
   if (top > 0 && topSets.length && topSets.every((s) => s.rir != null)) {
     const could = max ? topSets.every((s) => (s.r || 0) + s.rir >= max && s.rir >= 2) : topSets.every((s) => s.rir >= 3);
     const already = max && topSets.every((s) => (s.r || 0) >= max);
-    if (could && !already) {
+    // reps left show capacity past the target, so the jump comes after one session (an app rule of thumb)
+    if (could && (!already || opts.jumpMode === 'auto')) {
       return {
         sets: work.map((s) => ({ w: (s.w || 0) === top ? top + jump : s.w, r: min || s.r })),
         kind: 'up', aim, jump,
-        note: (max ? `Heavier${jumpNote}: with the reps you had left, you could have hit ${max} on every set` : `Heavier${jumpNote}: you had 3+ reps left on every set last time`),
+        note: !max ? `Heavier${jumpNote}: you had 3+ reps left on every set last time`
+          : already ? `Heavier${jumpNote}: you hit ${max} on every set with reps to spare`
+            : `Heavier${jumpNote}: with the reps you had left, you could have hit ${max} on every set`,
       };
     }
   }

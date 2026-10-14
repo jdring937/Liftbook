@@ -10,7 +10,7 @@ const WINDOW = 12 * 7 * DAY;
 export function e1rmSeries(workouts, exercises, formula, since = 0) {
   const by = {};
   for (const w of workouts) {
-    if (w.start < since) continue;
+    if (w.start < since || w.deload) continue;
     const seen = {};
     for (const e of w.exercises) {
       const ex = exerciseOf(exercises, e.exId);
