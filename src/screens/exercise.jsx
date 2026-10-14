@@ -169,7 +169,7 @@ export function ExerciseScreen({ id }) {
                       <tr key={r.n}>
                         <td class="num">{r.n}</td>
                         <td class="r num">{fmtW(r.w, unit)}</td>
-                        <td class="r num muted">{r.n <= 20 ? fmtW(e1rm(r.w, r.n, formula), unit) : '–'}</td>
+                        <td class="r num muted">{e1rm(r.w, r.n, formula) ? fmtW(e1rm(r.w, r.n, formula), unit) : '–'}</td>
                         <td class="r small muted">{fmtDateShort(r.t)}</td>
                       </tr>
                     ))}

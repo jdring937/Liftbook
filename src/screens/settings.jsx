@@ -39,7 +39,7 @@ export function Row({ label, sub, children, onClick }) {
 export function RestSetting({ st, why = true }) {
   return (
     <>
-      <Row label="Rest timer" sub={st.restMode === 'fixed' ? 'Same rest for every exercise' : 'Compound 2:00, heavy 3:00, isolation 1:30'}>
+      <Row label="Rest timer" sub={st.restMode === 'fixed' ? 'Same rest for every exercise' : 'Heavy sets (6 reps or fewer) 3:00, others 1:30'}>
         <Seg options={[['evidence', 'Evidence'], ['fixed', 'Fixed']]} value={st.restMode === 'fixed' ? 'fixed' : 'evidence'} onChange={(v) => setSettings({ restMode: v })} />
       </Row>
       {st.restMode === 'fixed' && (

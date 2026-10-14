@@ -3,9 +3,10 @@ import { isLowerCompound } from './exkind.js';
 import { DAY, startOfDay, startOfWeek, startOfMonth, addDays, addMonths } from './util.js';
 
 // Estimated one-rep max. Brzycki: w * 36 / (37 - r). Epley: w * (1 + r / 30).
-// Estimates above 20 reps are not meaningful, so they are skipped.
+// Estimates get rougher as reps rise, so only sets of 12 reps or fewer are used.
+export const E1RM_MAX_REPS = 12;
 export function e1rm(kg, reps, formula = 'brzycki') {
-  if (!kg || !reps || reps < 1 || reps > 20) return null;
+  if (!kg || !reps || reps < 1 || reps > E1RM_MAX_REPS) return null;
   if (reps === 1) return kg;
   return formula === 'epley' ? kg * (1 + reps / 30) : (kg * 36) / (37 - reps);
 }
@@ -14,7 +15,8 @@ export const isWork = (s) => s.done && s.type !== 'w';
 
 // Reps used for estimated 1RM: when reps in reserve were logged, reps + reps left (capped at 5),
 // since rep-max formulas assume the set went to failure.
-export const effortReps = (s) => (s.rir != null && s.r ? s.r + Math.min(5, Math.max(0, s.rir)) : s.r);
+// (only for sets that themselves are within the estimate's range, and never past it)
+export const effortReps = (s) => (s.rir != null && s.r && s.r <= E1RM_MAX_REPS ? Math.min(E1RM_MAX_REPS, s.r + Math.min(5, Math.max(0, s.rir))) : s.r);
 
 // Effort labels: stored as reps in reserve; RPE on the RIR-based scale is 10 - RIR
 export function effortLabel(rir, scale, short = false) {
@@ -145,6 +147,12 @@ export function pastNotes(workouts, exId, beforeT = Infinity) {
   return out.sort((a, b) => b.t - a.t);
 }
 
+// The two most recent sessions of an exercise, newest first
+export function lastSessionsFor(workouts, exId, n = 2) {
+  const ws = workouts.filter((w) => w.exercises.some((e) => e.exId === exId && e.sets.some(isWork))).sort((a, b) => b.start - a.start).slice(0, n);
+  return ws.map((w) => ({ t: w.start, sets: w.exercises.filter((e) => e.exId === exId).flatMap((e) => e.sets.filter(isWork)) }));
+}
+
 // Most recent completed sets of an exercise (for the "Previous" column)
 export function lastSetsFor(workouts, exId, beforeT = Infinity) {
   let bestW = null;
@@ -171,6 +179,16 @@ export function weightJump(top, ex, stepKg, mode = 'fixed') {
   if (mode !== 'auto' || !top) return stepKg;
   const pct = isLowerCompound(ex) ? 0.05 : 0.025;
   return Math.max(1, Math.round((top * pct) / stepKg)) * stepKg;
+}
+
+// For ACSM-style progression: true when the session before last also reached the top of the
+// range on every top-weight set, at the same weight or heavier
+export function topOfRangeHit(sets, max, atLeastKg) {
+  const work = (sets || []).filter((s) => s.type !== 'w');
+  if (!work.length || !max) return false;
+  const top = Math.max(...work.map((s) => s.w || 0));
+  if (top + 1e-6 < atLeastKg) return false;
+  return work.filter((s) => (s.w || 0) === top).every((s) => (s.r || 0) >= max);
 }
 
 // Session targets. opts.deload: deload week. opts.jumpMode: 'auto' | 'fixed'.
@@ -214,6 +232,14 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
     }
   }
   if (top > 0 && max && topSets.every((s) => (s.r || 0) >= max)) {
+    // Evidence mode follows ACSM: add load after hitting the target in two sessions in a row
+    if (opts.jumpMode === 'auto' && !opts.prev2Hit) {
+      return {
+        sets: work.map((s) => ({ w: s.w, r: s.r })),
+        kind: 'match', aim,
+        note: `Hit ${max} on every set again to earn the jump (two sessions in a row)`,
+      };
+    }
     return {
       sets: work.map((s) => ({ w: (s.w || 0) === top ? top + jump : s.w, r: min || Math.max(1, max - 4) })),
       kind: 'up', aim, jump,

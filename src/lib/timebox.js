@@ -1,9 +1,9 @@
 // Fit a workout into a time budget.
 // Estimate: each set takes its working time plus rest, plus a little setup per exercise,
 // scaled by how long your past sessions actually took compared with the same estimate.
-// Loosely informed by Iversen et al. 2021 (prioritise multi-joint lifts). The trimming order and
-// rest caps are app heuristics: shorten isolation rest, drop accessories that repeat a muscle,
-// trim accessory sets before compound sets (compound lifts keep at least 2 minutes' rest).
+// Loosely informed by Iversen et al. 2021 (prioritise multi-joint lifts). The trimming order is an
+// app heuristic: shorten rest on lighter sets (not below 75 s) and heavy sets (not below 2 min),
+// drop accessories that repeat a muscle, then trim accessory sets before compound sets.
 import { isWork } from './calc.js';
 import { isCompound } from './exkind.js';
 import { restFor } from './rest.js';
@@ -11,8 +11,8 @@ import { restFor } from './rest.js';
 export { isCompound } from './exkind.js';
 
 const SETUP = 45; // seconds to set up / move between exercises
-const ISO_REST = 75;
-const COMPOUND_REST_FLOOR = 120;
+const LIGHT_REST_FLOOR = 75; // still above the 60 s below which growth tends to suffer
+const HEAVY_REST_FLOOR = 120; // rest over 2 min helps strength in trained lifters
 
 function workSec(ex, reps) {
   if (ex && ex.kind === 'time') return 45;
@@ -95,8 +95,9 @@ export function fitToTime(items, exercises, budgetMin, { settings, k = 1 } = {})
       if (pred(r) && r.rest > cap) r.rest = cap;
     }
   };
-  capRest(iso, ISO_REST);
-  capRest(comp, 150);
+  const heavy = (r) => r.reps <= 6;
+  capRest((r) => !heavy(r), LIGHT_REST_FLOOR);
+  capRest(heavy, 150);
   // accessories whose main muscles an earlier exercise already trains as a main muscle
   dropFromEnd((r) => iso(r) && r.ex && r.ex.primary.every((m) => live().some((o) => o.i < r.i && o.ex && o.ex.primary.includes(m))));
   trimTo(iso, 2);
@@ -104,7 +105,7 @@ export function fitToTime(items, exercises, budgetMin, { settings, k = 1 } = {})
   trimTo(iso, 1);
   trimTo(comp, 2);
   dropFromEnd(iso);
-  capRest(comp, COMPOUND_REST_FLOOR);
+  capRest(heavy, HEAVY_REST_FLOOR);
   trimTo(comp, 1);
   dropFromEnd(() => true);
 

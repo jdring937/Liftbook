@@ -29,20 +29,21 @@ export const EVIDENCE = {
   },
   rest: {
     title: 'Rest between sets',
-    summary: 'Resting more than about 60 seconds may give slightly more muscle growth than very short rest; beyond about 90 seconds there’s no clear extra benefit. Longer rest (2–3 minutes) on heavy compound lifts is common practice, mainly to keep performance up across sets, and isolation exercises usually need less.',
-    app: 'With the rest timer on Evidence (the default), each exercise gets its own rest: compound lifts 2:00, or 3:00 when the rep target is 6 or fewer; isolation exercises 1:30; timed holds 1:00. Those exact numbers are the app’s rule built on the ranges above. A time you pick for an exercise always wins. Fit to time may shorten isolation rest to 1:15 and won’t cut compound rest below 2:00.',
-    where: 'Settings → Rest timer; the timer after each set says why (for example “isolation”); exercise rest buttons show “Auto”',
+    summary: 'It depends on how heavy the sets are. For muscle growth, ACSM recommends 1–2 minutes, and a 2024 meta-analysis found a small benefit from resting more than about 60 seconds but no clear extra benefit past about 90 seconds. For heavy sets aimed at strength, ACSM recommends 3–5 minutes for intermediate and advanced lifters, and a systematic review found that resting more than 2 minutes is needed to get the most strength out of training in experienced lifters (60–120 seconds was enough for beginners).',
+    app: 'With the rest timer on Evidence (the default), rest follows each exercise’s rep target: 6 reps or fewer counts as heavy and gets 3:00 (the low end of ACSM’s 3–5 minutes, and over the 2 minutes from the strength review); anything else gets 1:30 (inside ACSM’s 1–2 minutes and at the point past which growth stops improving). Timed holds get 1:00, the app’s own choice. Exercises without a rep target get 1:30. A time you pick for an exercise always wins. Fit to time may shorten lighter sets to 1:15 (still over 60 seconds) and won’t cut heavy sets below 2:00.',
+    where: 'Settings → Rest timer; the timer after each set says why (for example “muscle-building sets”); exercise rest buttons show “Auto”',
     setting: 'rest',
     refs: [
-      { cite: 'Schoenfeld BJ, Pope ZK, Benik FM, et al. (2016). Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men. J Strength Cond Res 30(7):1805–1812.', url: doi('10.1519/JSC.0000000000001272') },
+      { cite: 'Ratamess NA, Alvar BA, Evetoch TK, et al. (2009). ACSM Position Stand. Progression Models in Resistance Training for Healthy Adults. Med Sci Sports Exerc 41(3):687–708. (3–5 min between heavy sets for strength; 1–2 min for hypertrophy.)', url: doi('10.1249/MSS.0b013e3181915670') },
       { cite: 'Singer A, Wolf M, Generoso L, et al. (2024). Give it a rest: a systematic review with Bayesian meta-analysis on the effect of inter-set rest interval duration on muscle hypertrophy. Front Sports Act Living 6:1429789.', url: doi('10.3389/fspor.2024.1429789') },
-      { cite: 'Ratamess NA, Alvar BA, Evetoch TK, et al. (2009). ACSM Position Stand. Progression Models in Resistance Training for Healthy Adults. Med Sci Sports Exerc 41(3):687–708. (1–2 minutes may suffice for assistance exercises.)', url: doi('10.1249/MSS.0b013e3181915670') },
+      { cite: 'Grgic J, Schoenfeld BJ, Skrepnik M, Davies TB, Mikulic P (2018). Effects of Rest Interval Duration in Resistance Training on Measures of Muscular Strength: A Systematic Review. Sports Med 48(1):137–151.', url: doi('10.1007/s40279-017-0788-x') },
+      { cite: 'Schoenfeld BJ, Pope ZK, Benik FM, et al. (2016). Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men. J Strength Cond Res 30(7):1805–1812.', url: doi('10.1519/JSC.0000000000001272') },
     ],
   },
   timeEfficient: {
     title: 'Training when short on time',
     summary: 'A review of time-efficient training recommends prioritising multi-joint lifts (at least a squat or leg press, an upper-body push and an upper-body pull), doing at least 4 hard sets per muscle per week, and remembering that weekly volume matters more than frequency. Supersets and similar techniques can roughly halve session time.',
-    app: 'Fit to time protects compound lifts longest, in line with the review’s priority on multi-joint exercises. The rest of the trimming order is the app’s own rule of thumb: shorten rest on isolation moves (to 1:15) and trim compound rest to no less than 2:00, drop accessories that repeat a muscle already trained that session, then trim accessory sets before compound sets.',
+    app: 'Fit to time protects compound lifts longest, in line with the review’s priority on multi-joint exercises. The rest of the trimming order is the app’s own rule of thumb: shorten rest on lighter sets (to no less than 1:15) and heavy sets (to no less than 2:00), drop accessories that repeat a muscle already trained that session, then trim accessory sets before compound sets.',
     where: 'Train → tap a workout → Short on time? Fit it in (also under your program’s next day)',
     refs: [
       { cite: 'Iversen VM, Norum M, Schoenfeld BJ, Fimland MS (2021). No Time to Lift? Designing Time-Efficient Training Programs for Strength and Hypertrophy: A Narrative Review. Sports Med 51(10):2079–2095.', url: doi('10.1007/s40279-021-01490-1') },
@@ -109,7 +110,7 @@ export const EVIDENCE = {
   progression: {
     title: 'When to add weight',
     summary: 'ACSM’s progression guidance: once you can do 1–2 reps more than your target in two sessions in a row, add about 2–10% load (less for small muscle groups, more for large ones). The 2026 position stand recommends progressive training, noting overload matters most for continued long-term progress.',
-    app: 'Targets use double progression: a rep more each session until every set reaches the top of your range, then a weight jump and back to the bottom of the range. With weight jumps on Evidence (the default), the jump is about 5% of the working weight for lower-body compound lifts and 2.5% for everything else (the app’s choice within ACSM’s 2–10%), rounded to your smallest step and never less than one step. Fixed uses the same jump everywhere. The app adds weight after one session at the top of the range rather than ACSM’s two.',
+    app: 'Targets use double progression: a rep more each session until every set reaches the top of your rep range, then a weight jump and back to the bottom of the range. With weight jumps on Evidence (the default), the jump follows ACSM: it comes after you reach the top of the range on every set in two sessions in a row, and it’s about 5% of the working weight for lower-body compound lifts and 2.5% for everything else (the app’s choice within ACSM’s 2–10%), rounded to your smallest step. Fixed adds the same jump after a single session. If you rate effort and the reps you had left show you could have passed the top of the range, the jump can come after one session (an app rule of thumb).',
     where: 'Workout targets (an “up” target shows the jump as a %); Settings → Weight jumps',
     setting: 'progression',
     refs: [
@@ -120,7 +121,7 @@ export const EVIDENCE = {
   e1rm: {
     title: 'Estimated 1RM',
     summary: 'Formulas like Brzycki and Epley estimate your one-rep max from a set of several reps. They are approximations; a common rule of thumb is that they’re more reliable from lower-rep sets (about 10 or fewer). In one study of untrained students, every common equation underestimated the deadlift.',
-    app: 'Estimates use your best set each session and ignore sets of more than 20 reps. Forecasts use the trend in these estimates, not any single session.',
+    app: 'Estimates use your best set each session from sets of 12 reps or fewer, a little past the 10-rep rule of thumb so the common 8–12 rep sets still count; higher-rep sets don’t get an estimate. Forecasts use the trend in these estimates, not any single session.',
     where: 'Exercise pages, lift goals and personal records',
     refs: [
       { cite: 'LeSuer DA, McCormick JH, Mayhew JL, et al. (1997). The Accuracy of Prediction Equations for Estimating 1-RM Performance in the Bench Press, Squat, and Deadlift. J Strength Cond Res 11(4):211–213.', url: doi('10.1519/00124278-199711000-00001') },

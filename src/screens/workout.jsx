@@ -4,7 +4,7 @@ import {
   useStore, getState, allExercises, updateActive, finishActive, discardActive, saveWorkout, deleteWorkout,
   newEntry, newSet, startRest, adjustRest, stopRest, saveTemplate, templateFromWorkout,
 } from '../store.js';
-import { exerciseOf, lastSetsFor, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets, pastNotes, effortReps, effortLabel } from '../lib/calc.js';
+import { exerciseOf, lastSetsFor, lastSessionsFor, topOfRangeHit, bestByExercise, e1rm, isWork, workoutSummary, buildPRIndex, sessionTargets, pastNotes, effortReps, effortLabel } from '../lib/calc.js';
 import { movedLine } from '../components/moved.jsx';
 import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum, uid, plural, fmtSecs, fmtDateShort, daysAgo } from '../lib/util.js';
 import { Icon, NumInput, Toggle, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
@@ -397,7 +397,7 @@ export function restSheet(value, onSave, opts = {}) {
           <button key={String(v)} class={'menu-row' + (value === v ? ' on' : '')} onClick={() => { onSave(v); close(); }}>
             {v == null
               ? (auto
-                ? <span>Auto{opts.ex ? ` (${fmtClock(autoRest(opts.ex, opts.target))}, ${autoRestWhy(opts.ex, opts.target)})` : ''}<span class="small muted block">Evidence-based: compound lifts 2:00 (3:00 at 6 reps or fewer), isolation 1:30</span></span>
+                ? <span>Auto{opts.ex ? ` (${fmtClock(autoRest(opts.ex, opts.target))}, ${autoRestWhy(opts.ex, opts.target)})` : ''}<span class="small muted block">Evidence-based: heavy sets (6 reps or fewer) 3:00, other sets 1:30</span></span>
                 : `Default (${st.rest ? fmtClock(st.rest) : 'off'})`)
               : v === 0 ? 'Off' : fmtClock(v)}
             {value === v && <Icon name="check" size={18} class="ml-auto" />}
@@ -535,7 +535,15 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
           const prev = lastSetsFor(others, e.exId);
           const notes = pastNotes(others, e.exId, isActive ? Infinity : w.start);
           const targets = isActive && s.settings.targets
-            ? sessionTargets(prev, ex, e.target, toKg(incr, unit), { deload: w.deload, jumpMode: s.settings.jumpMode, effort: w.effort ? scale : null })
+            ? sessionTargets(prev, ex, e.target, toKg(incr, unit), {
+              deload: w.deload, jumpMode: s.settings.jumpMode, effort: w.effort ? scale : null,
+              prev2Hit: (() => {
+                const two = lastSessionsFor(others, e.exId, 2);
+                if (two.length < 2 || !e.target || !e.target.max) return false;
+                const top = Math.max(...two[0].sets.filter((x) => x.type !== 'w').map((x) => x.w || 0));
+                return topOfRangeHit(two[1].sets, e.target.max, top);
+              })(),
+            })
             : null;
           return (
             <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula}
