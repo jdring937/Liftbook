@@ -7,7 +7,7 @@ import { plural, fmtClock } from '../lib/util.js';
 import { Icon, Header, Seg, Chips, Stepper, NumInput, push, pop, openSheet, confirmSheet, toast, plateVar, Empty } from '../ui.jsx';
 import { openPicker, useExerciseList, musclesText, ExerciseForm } from './pickers.jsx';
 import { TemplateRow, templateSheet, begin } from './train.jsx';
-import { restSheet } from './workout.jsx';
+import { restSheet, restLabel } from './workout.jsx';
 import { MUSCLE_FILTERS } from '../data/exercises.js';
 import { ExThumb } from '../components/preview.jsx';
 import { Coverage } from '../components/coverage.jsx';
@@ -160,8 +160,8 @@ export function TemplateEditor({ id }) {
                       </span>
                     </label>
                   )}
-                  <button class="mini rest-pick" onClick={() => restSheet(it.rest, (v) => setItem(i, { rest: v }))}>
-                    <span>Rest</span><strong class="num">{it.rest == null ? 'Default' : it.rest ? fmtClock(it.rest) : 'Off'}</strong>
+                  <button class="mini rest-pick" onClick={() => restSheet(it.rest, (v) => setItem(i, { rest: v }), { ex, target: it })}>
+                    <span>Rest</span><strong class="num">{restLabel(it.rest, ex, it)}</strong>
                   </button>
                 </div>
                 <input class="ti-note" type="text" placeholder="Note, e.g. RPE 8 or seat 4" value={it.note || ''} aria-label={`Note for ${ex.name}`}

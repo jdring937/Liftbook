@@ -5,9 +5,10 @@
 // rest caps are app heuristics: shorten isolation rest, drop accessories that repeat a muscle,
 // trim accessory sets before compound sets (compound lifts keep at least 2 minutes' rest).
 import { isWork } from './calc.js';
+import { isCompound } from './exkind.js';
+import { restFor } from './rest.js';
 
-const ISOLATION_RE = /curl|raise|fly|flye|crossover|extension|skull|pushdown|push down|kickback|face pull|shrug|crunch|calf|rear delt|wrist|external rotation|abduction|adduction|pullover|straight-arm|plank|dead bug|twist|woodchop|pallof|rollout|hang|bridge|sit up/i;
-export const isCompound = (ex) => (ex && ex.compound != null ? !!ex.compound : !!ex && !ISOLATION_RE.test(ex.name));
+export { isCompound } from './exkind.js';
 
 const SETUP = 45; // seconds to set up / move between exercises
 const ISO_REST = 75;
@@ -17,7 +18,8 @@ function workSec(ex, reps) {
   if (ex && ex.kind === 'time') return 45;
   return 15 + 3 * (reps || 10);
 }
-const restOf = (rest, def) => (rest == null ? def : rest === 0 ? 60 : rest);
+// rest the session will actually use; a timer that's off still means some rest (about a minute)
+const restOf = (rest, ex, target, settings) => { const r = restFor(rest, ex, target, settings); return r === 0 ? 60 : r; };
 
 // raw estimate in seconds for [{ sets, rest, reps, ex }]
 function rawEstimate(rows) {
@@ -27,7 +29,7 @@ function rawEstimate(rows) {
 }
 
 // How long past sessions really took versus the same estimate (median ratio, needs 3+ sessions)
-export function calibration(workouts, exercises, defRest) {
+export function calibration(workouts, exercises, settings) {
   const ratios = [];
   const recent = [...workouts].filter((w) => w.end && w.start).sort((a, b) => b.start - a.start).slice(0, 15);
   for (const w of recent) {
@@ -36,7 +38,7 @@ export function calibration(workouts, exercises, defRest) {
     const rows = w.exercises.map((e) => {
       const done = e.sets.filter((s) => s.done || isWork(s));
       const reps = done.length ? done.reduce((a, s) => a + (s.r || 0), 0) / done.length : 10;
-      return { sets: done.length, rest: restOf(e.rest, defRest), reps, ex: exercises[e.exId] };
+      return { sets: done.length, rest: restOf(e.rest, exercises[e.exId], e.target, settings), reps, ex: exercises[e.exId] };
     }).filter((r) => r.sets);
     const est = rawEstimate(rows);
     if (est > 300) ratios.push(dur / est);
@@ -47,20 +49,20 @@ export function calibration(workouts, exercises, defRest) {
   return { k, n: ratios.length };
 }
 
-function rowsFor(items, exercises, defRest) {
+function rowsFor(items, exercises, settings) {
   return items.map((it, i) => ({
     i, exId: it.exId, ex: exercises[it.exId], sets: it.sets || 0, origSets: it.sets || 0,
-    rest: restOf(it.rest, defRest), origRest: restOf(it.rest, defRest), reps: it.max || it.min || 10,
+    rest: restOf(it.rest, exercises[it.exId], it, settings), origRest: restOf(it.rest, exercises[it.exId], it, settings), reps: it.max || it.min || 10,
     compound: isCompound(exercises[it.exId]), dropped: false, item: it,
   }));
 }
 
-export function estimateTemplate(items, exercises, defRest, k = 1) {
-  return rawEstimate(rowsFor(items, exercises, defRest)) * k;
+export function estimateTemplate(items, exercises, settings, k = 1) {
+  return rawEstimate(rowsFor(items, exercises, settings)) * k;
 }
 
-export function fitToTime(items, exercises, budgetMin, { defRest = 120, k = 1 } = {}) {
-  const rows = rowsFor(items, exercises, defRest);
+export function fitToTime(items, exercises, budgetMin, { settings, k = 1 } = {}) {
+  const rows = rowsFor(items, exercises, settings);
   const budget = budgetMin * 60;
   const live = () => rows.filter((r) => !r.dropped && r.sets > 0);
   const est = () => rawEstimate(live()) * k;

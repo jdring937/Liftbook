@@ -1,4 +1,5 @@
 import { MUSCLES } from '../data/exercises.js';
+import { isLowerCompound } from './exkind.js';
 import { DAY, startOfDay, startOfWeek, startOfMonth, addDays, addMonths } from './util.js';
 
 // Estimated one-rep max. Brzycki: w * 36 / (37 - r). Epley: w * (1 + r / 30).
@@ -163,6 +164,17 @@ export function lastSetsFor(workouts, exId, beforeT = Infinity) {
 // range, add one increment and drop back to the bottom of the range; otherwise keep the
 // weight and add a rep to each set, capped at the top of the range.
 // Without a range: keep the weight and beat each set by a rep.
+// Weight jump for a target. Fixed: the jump set in Settings. Auto: a share of the working weight in
+// line with ACSM's 2-10% guidance (about 5% for lower-body compound lifts, 2.5% otherwise), rounded
+// to the jump in Settings, which then acts as the smallest step you can load.
+export function weightJump(top, ex, stepKg, mode = 'fixed') {
+  if (mode !== 'auto' || !top) return stepKg;
+  const pct = isLowerCompound(ex) ? 0.05 : 0.025;
+  return Math.max(1, Math.round((top * pct) / stepKg)) * stepKg;
+}
+
+// Session targets. opts.deload: deload week. opts.jumpMode: 'auto' | 'fixed'.
+// opts.effort: 'rir' | 'rpe' when effort rating is on, so targets also suggest an effort.
 export function sessionTargets(prev, ex, range, incKg, opts = {}) {
   const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
   if (!work.length) return null;
@@ -176,14 +188,18 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
       kind: 'deload', note: 'Deload: same weight, stop 3–4 reps short of failure',
     };
   }
+  // close to failure without going all the way (about 0–3 reps left); suggested when effort rating is on
+  const aim = opts.effort === 'rpe' ? 'RPE 7–9' : opts.effort ? '1–3 reps left' : null;
   if (ex.kind === 'time') {
     return { sets: work.map((s) => ({ w: s.w ?? null, t: (s.t || 0) + 5 })), kind: 'more', note: '5 seconds longer than last time' };
   }
   if (ex.kind === 'reps') {
-    return { sets: work.map((s) => ({ w: s.w ?? null, r: (s.r || 0) + 1 })), kind: 'more', note: 'One more rep per set than last time' };
+    return { sets: work.map((s) => ({ w: s.w ?? null, r: (s.r || 0) + 1 })), kind: 'more', note: 'One more rep per set than last time', aim };
   }
   const top = Math.max(...work.map((s) => s.w || 0));
   const topSets = work.filter((s) => (s.w || 0) === top);
+  const jump = weightJump(top, ex, incKg, opts.jumpMode);
+  const jumpNote = opts.jumpMode === 'auto' && top ? ` (+${Math.round((jump / top) * 1000) / 10}%)` : '';
   // reps in reserve logged on every top set: go heavier when the reps you had left would have
   // reached the top of the range (with at least 2 to spare), or 3+ left with no range
   if (top > 0 && topSets.length && topSets.every((s) => s.rir != null)) {
@@ -191,17 +207,17 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
     const already = max && topSets.every((s) => (s.r || 0) >= max);
     if (could && !already) {
       return {
-        sets: work.map((s) => ({ w: (s.w || 0) === top ? top + incKg : s.w, r: min || s.r })),
-        kind: 'up',
-        note: max ? `Heavier: with the reps you had left, you could have hit ${max} on every set` : 'Heavier: you had 3+ reps left on every set last time',
+        sets: work.map((s) => ({ w: (s.w || 0) === top ? top + jump : s.w, r: min || s.r })),
+        kind: 'up', aim, jump,
+        note: (max ? `Heavier${jumpNote}: with the reps you had left, you could have hit ${max} on every set` : `Heavier${jumpNote}: you had 3+ reps left on every set last time`),
       };
     }
   }
   if (top > 0 && max && topSets.every((s) => (s.r || 0) >= max)) {
     return {
-      sets: work.map((s) => ({ w: (s.w || 0) === top ? top + incKg : s.w, r: min || Math.max(1, max - 4) })),
-      kind: 'up',
-      note: `Heavier: you hit ${max} reps on every set last time`,
+      sets: work.map((s) => ({ w: (s.w || 0) === top ? top + jump : s.w, r: min || Math.max(1, max - 4) })),
+      kind: 'up', aim, jump,
+      note: `Heavier${jumpNote}: you hit ${max} reps on every set last time`,
     };
   }
   const sets = work.map((s) => {
@@ -211,9 +227,9 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
     return { w: s.w, r };
   });
   const same = sets.every((t, i) => t.r === work[i].r);
-  const jump = sets.some((t, i) => t.r - (work[i].r || 0) > 1);
-  const note = same ? 'Match last time' : jump ? (min === max ? `Aim for ${max} reps` : `Work up to ${min}–${max} reps`) : 'One more rep per set than last time';
-  return { sets, kind: same ? 'match' : 'more', note };
+  const big = sets.some((t, i) => t.r - (work[i].r || 0) > 1);
+  const note = same ? 'Match last time' : big ? (min === max ? `Aim for ${max} reps` : `Work up to ${min}–${max} reps`) : 'One more rep per set than last time';
+  return { sets, kind: same ? 'match' : 'more', note, aim };
 }
 
 // Heaviest weight lifted for exactly N reps (only rep counts you have done)
@@ -330,16 +346,17 @@ export function groupStats(workouts, exercises, bounds, groups) {
   return out;
 }
 
-// Heat level 0-5 from average sets per week
+// Heat level 0-5 from sets per week, on the same bands as the evidence notes:
+// under 4 low, 4-9 moderate, 10-20 typical growth range, over 20 diminishing returns
 export function heatLevel(perWeek) {
   if (!perWeek) return 0;
-  if (perWeek < 5) return 1;
+  if (perWeek < 4) return 1;
   if (perWeek < 10) return 2;
   if (perWeek < 15) return 3;
-  if (perWeek < 20) return 4;
+  if (perWeek <= 20) return 4;
   return 5;
 }
-export const HEAT_LABELS = ['0', '1–4', '5–9', '10–14', '15–19', '20+'];
+export const HEAT_LABELS = ['0', '1–3', '4–9', '10–14', '15–20', '20+'];
 
 export function niceMax(v) {
   if (!v || v <= 0) return 1;

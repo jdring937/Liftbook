@@ -59,7 +59,7 @@ function WeightPanel({ s, exercises }) {
   const now = Date.now();
   const since = range ? now - range * DAY : 0;
   const pts = trend.filter((p) => p.t >= since);
-  const fit = useMemo(() => fitLine(rows.map((r) => ({ t: r.t, v: r.v })), now, 28), [s.body]);
+  const fit = useMemo(() => fitLine(trend.map((p) => ({ t: p.t, v: p.v })), now, 28), [trend]);
   const last = trend[trend.length - 1];
   const ago = (days) => { const p = [...trend].reverse().find((x) => x.t <= now - days * DAY); return p && last ? last.v - p.v : null; };
   const d7 = ago(7), d30 = ago(30);

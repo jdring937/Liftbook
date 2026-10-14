@@ -861,3 +861,16 @@ input[type='range'] { width: 100%; accent-color: var(--blue); min-height: 32px; 
 .insights + .week { margin-top: 0; }
 .next-card ~ .week, .insights ~ .week { margin-top: 12px; }
 .insights-more { align-self: flex-start; padding: 2px 2px 0; }
+
+.target-aim { color: var(--blue) !important; font-weight: 600; }
+
+.set-why { padding: 2px 14px 10px; }
+.set-why .why { font-size: 13px; }
+
+.group > .set-why { border-top: 0 !important; padding-top: 0; }
+.ev-where { margin-top: 8px; font-size: 14px; color: var(--text-2); }
+.ev-where span { font-weight: 650; color: var(--text); }
+.ev-setting { margin-top: 12px; }
+.ev-setting > strong { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+.ev-setting .group { background: var(--surface-2); }
+.ev-badge { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 6px; background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue); font-size: 12px; font-weight: 700; vertical-align: 1px; }

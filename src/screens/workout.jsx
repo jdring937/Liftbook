@@ -11,6 +11,7 @@ import { Icon, NumInput, Toggle, openSheet, confirmSheet, toast, push, pop, remo
 import { openPicker, musclesText } from './pickers.jsx';
 import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
 import { Why } from '../components/why.jsx';
+import { restFor, restIsAuto, autoRest, autoRestWhy } from '../lib/rest.js';
 const WhyLink = () => <Why id="pain" />;
 
 const TYPE_LABEL = { w: 'W', d: 'D', f: 'F' };
@@ -71,7 +72,7 @@ export function RestBar() {
         <button class="rest-btn" onClick={() => adjustRest(-15)}>−15</button>
         <div class="rest-time">
           <span class="num">{left <= 0 ? 'Rest done' : fmtClock(Math.ceil(left))}</span>
-          <span class="small">{left <= 0 ? 'Next set' : `Rest ${fmtClock(r.total)}`}</span>
+          <span class="small">{left <= 0 ? 'Next set' : `Rest ${fmtClock(r.total)}${r.why ? ` · ${r.why}` : ''}`}</span>
         </div>
         <button class="rest-btn" onClick={() => adjustRest(15)}>+15</button>
         <button class="rest-btn skip" onClick={stopRest}>Skip</button>
@@ -228,8 +229,8 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
           <button class="menu-row" onClick={() => { close(); painSheet(entry.pain, (pain) => onChange({ ...entry, pain })); }}><Icon name="flame" size={20} /> Pain or discomfort {entry.pain != null && <span class="muted ml-auto">{entry.pain}/10</span>}</button>
           {notes.length > 0 && <button class="menu-row" onClick={() => { close(); notesSheet(ex, notes, unit); }}><Icon name="note" size={20} /> Past notes <span class="muted ml-auto">{notes.length}</span></button>}
           {mode === 'active' && (
-            <button class="menu-row" onClick={() => { close(); restSheet(entry.rest, (rest) => onChange({ ...entry, rest })); }}>
-              <Icon name="timer" size={20} /> Rest timer <span class="muted ml-auto">{entry.rest == null ? 'Default' : entry.rest ? fmtClock(entry.rest) : 'Off'}</span>
+            <button class="menu-row" onClick={() => { close(); restSheet(entry.rest, (rest) => onChange({ ...entry, rest }), { ex, target: entry.target }); }}>
+              <Icon name="timer" size={20} /> Rest timer <span class="muted ml-auto">{restLabel(entry.rest, ex, entry.target)}</span>
             </button>
           )}
           {idx > 0 && <button class="menu-row" onClick={() => { onMove(-1); close(); }}><Icon name="arrowUp" size={20} /> Move up</button>}
@@ -271,7 +272,11 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
       {targets && (
         <div class={'target t-' + targets.kind}>
           <Icon name={targets.kind === 'up' ? 'arrowUp' : targets.kind === 'deload' ? 'arrowDown' : 'flame'} size={17} stroke={2.2} />
-          <span><strong class="num">Target {targetSummary(targets, ex, unit)}</strong><span class="small">{targets.note}</span></span>
+          <span>
+            <strong class="num">Target {targetSummary(targets, ex, unit)}</strong>
+            <span class="small">{targets.note}</span>
+            {targets.aim && <span class="small target-aim">Finish each set with {targets.aim}</span>}
+          </span>
         </div>
       )}
       <div class="set-head">
@@ -372,18 +377,34 @@ function NoteForm({ value, close, onSave }) {
   );
 }
 const REST_OPTIONS = [null, 0, 30, 45, 60, 90, 120, 150, 180, 240, 300];
-export function restSheet(value, onSave) {
+// What the rest button shows: an exercise's own setting, or the automatic / default value
+export function restLabel(rest, ex, target) {
+  const st = getState().settings;
+  if (rest != null) return rest ? fmtClock(rest) : 'Off';
+  return restIsAuto(rest, st) ? `Auto ${fmtClock(autoRest(ex, target))}` : `Default ${st.rest ? fmtClock(st.rest) : 'off'}`;
+}
+// opts.ex / opts.target describe the exercise so the automatic option can show its value;
+// opts.noDefault hides the "use default" option (for the fixed timer in Settings)
+export function restSheet(value, onSave, opts = {}) {
+  const st = getState().settings;
+  const auto = st.restMode !== 'fixed';
+  const options = opts.noDefault ? REST_OPTIONS.filter((v) => v != null) : REST_OPTIONS;
   openSheet((close) => (
     <div class="sheet-pad">
       <h3 class="sheet-title">Rest timer</h3>
       <div class="menu">
-        {REST_OPTIONS.map((v) => (
+        {options.map((v) => (
           <button key={String(v)} class={'menu-row' + (value === v ? ' on' : '')} onClick={() => { onSave(v); close(); }}>
-            {v == null ? `Default (${fmtClock(getState().settings.rest)})` : v === 0 ? 'Off' : fmtClock(v)}
+            {v == null
+              ? (auto
+                ? <span>Auto{opts.ex ? ` (${fmtClock(autoRest(opts.ex, opts.target))}, ${autoRestWhy(opts.ex, opts.target)})` : ''}<span class="small muted block">Evidence-based: compound lifts 2:00 (3:00 at 6 reps or fewer), isolation 1:30</span></span>
+                : `Default (${st.rest ? fmtClock(st.rest) : 'off'})`)
+              : v === 0 ? 'Off' : fmtClock(v)}
             {value === v && <Icon name="check" size={18} class="ml-auto" />}
           </button>
         ))}
       </div>
+      {auto && !opts.noDefault && <p class="small muted mt-8">Picking a time here fixes it for this exercise. <Why id="rest" /></p>}
     </div>
   ));
 }
@@ -430,8 +451,9 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
   const onSetDone = (entry, set) => {
     unlockAudio();
     if (!isActive) return;
-    const sec = entry.rest == null ? s.settings.rest : entry.rest;
-    if (sec > 0) startRest(sec);
+    const ex = exerciseOf(exercises, entry.exId);
+    const sec = restFor(entry.rest, ex, entry.target, s.settings);
+    if (sec > 0) startRest(sec, restIsAuto(entry.rest, s.settings) ? autoRestWhy(ex, entry.target) : null);
   };
 
   const finish = async () => {
@@ -512,7 +534,9 @@ export function WorkoutEditor({ mode, workoutId, draft }) {
           const ex = exerciseOf(exercises, e.exId);
           const prev = lastSetsFor(others, e.exId);
           const notes = pastNotes(others, e.exId, isActive ? Infinity : w.start);
-          const targets = isActive && s.settings.targets ? sessionTargets(prev, ex, e.target, toKg(incr, unit), { deload: w.deload }) : null;
+          const targets = isActive && s.settings.targets
+            ? sessionTargets(prev, ex, e.target, toKg(incr, unit), { deload: w.deload, jumpMode: s.settings.jumpMode, effort: w.effort ? scale : null })
+            : null;
           return (
             <ExerciseBlock key={e.id} entry={e} idx={i} count={w.exercises.length} ex={ex} unit={unit} formula={formula}
               prev={prev} best={best[e.exId]} targets={targets} mode={mode} notes={notes}

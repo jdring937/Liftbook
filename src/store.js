@@ -32,6 +32,7 @@ export function defaultState() {
       unit: 'lb', rest: 120, formula: 'brzycki', weekStart: 0, theme: 'system',
       keepAwake: true, incLb: 5, incKg: 2.5, sound: true, targets: true, bodySex: 'male', lastBackup: null,
       deloadUntil: null, lastDeload: null, effortDefault: false, effortScale: 'rir',
+      restMode: 'evidence', jumpMode: 'auto',
     },
     custom: {},
     templates: [],
@@ -368,8 +369,8 @@ export function programNext(p) {
 }
 
 // ---------- rest timer ----------
-export function startRest(sec) {
-  update((s) => ({ ...s, rest: { endsAt: Date.now() + sec * 1000, total: sec } }));
+export function startRest(sec, why = null) {
+  update((s) => ({ ...s, rest: { endsAt: Date.now() + sec * 1000, total: sec, why } }));
 }
 export function adjustRest(delta) {
   update((s) => {

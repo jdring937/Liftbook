@@ -1,12 +1,33 @@
 import { useState } from 'preact/hooks';
 import { EVIDENCE, EVIDENCE_ORDER } from '../data/evidence.js';
 import { Icon, Header, openSheet, pop } from '../ui.jsx';
+import { useStore } from '../store.js';
+import { RestSetting, JumpSetting, EffortSetting } from '../screens/settings.jsx';
+
+const SETTING = { rest: RestSetting, progression: JumpSetting, effort: EffortSetting };
+function SettingInline({ which }) {
+  const s = useStore();
+  const C = SETTING[which];
+  return (
+    <div class="ev-setting">
+      <strong>Your setting</strong>
+      <div class="group">{C && <C st={s.settings} why={false} />}</div>
+    </div>
+  );
+}
 
 function EvidenceBody({ e }) {
   return (
     <>
       <p class="ev-summary">{e.summary}</p>
-      {e.app && <div class="ev-app"><strong>In Swellness</strong><p>{e.app}</p></div>}
+      {e.app && (
+        <div class="ev-app">
+          <strong>In Swellness</strong>
+          <p>{e.app}</p>
+          {e.where && <p class="ev-where"><span>Where you’ll see it:</span> {e.where}</p>}
+        </div>
+      )}
+      {e.setting && <SettingInline which={e.setting} />}
       <div class="ev-refs">
         <span class="small muted">Sources</span>
         <ol>
@@ -48,7 +69,7 @@ export function EvidenceScreen() {
     <div class="screen-body">
       <Header title="The science" onBack={pop} />
       <div class="pad-16 stack-12">
-        <p class="muted">What the research says behind each recommendation in the app, with the sources. Tap a topic to read it.</p>
+        <p class="muted">What the research says behind each recommendation, what the app does with it, and where you’ll see it. Topics marked <span class="ev-badge">Setting</span> have an evidence-based mode you can switch.</p>
         <div class="list">
           {EVIDENCE_ORDER.map((id) => {
             const e = EVIDENCE[id];
@@ -56,7 +77,7 @@ export function EvidenceScreen() {
             return (
               <div key={id} class={'ev-item' + (on ? ' open' : '')}>
                 <button class="ev-head" aria-expanded={on} onClick={() => setOpen(on ? null : id)}>
-                  <span>{e.title}</span><Icon name={on ? 'up' : 'down'} size={18} class="muted" />
+                  <span>{e.title}{e.setting && <span class="ev-badge">Setting</span>}</span><Icon name={on ? 'up' : 'down'} size={18} class="muted" />
                 </button>
                 {on && <div class="ev-body"><EvidenceBody e={e} /></div>}
               </div>

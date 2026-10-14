@@ -4,6 +4,7 @@ import { fmtDateYear, fmtClock, plural } from '../lib/util.js';
 import { Icon, Header, Seg, Toggle, pop, push, confirmSheet, toast } from '../ui.jsx';
 import { restSheet } from './workout.jsx';
 import { exportPhotosZip, importPhotosZip } from './photos.jsx';
+import { Why } from '../components/why.jsx';
 
 async function shareOrDownload(text, filename, type) {
   const blob = text instanceof Blob ? text : new Blob([text], { type });
@@ -24,13 +25,58 @@ async function shareOrDownload(text, filename, type) {
   return true;
 }
 
-function Row({ label, sub, children, onClick }) {
+export function Row({ label, sub, children, onClick }) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag class={'set-line' + (onClick ? ' tap' : '')} onClick={onClick}>
       <span class="set-line-l"><span>{label}</span>{sub && <span class="small muted">{sub}</span>}</span>
       <span class="set-line-r">{children}</span>
     </Tag>
+  );
+}
+
+// Settings that have an evidence-based mode show it as the first choice, with a "Why?" link
+export function RestSetting({ st, why = true }) {
+  return (
+    <>
+      <Row label="Rest timer" sub={st.restMode === 'fixed' ? 'Same rest for every exercise' : 'Compound 2:00, heavy 3:00, isolation 1:30'}>
+        <Seg options={[['evidence', 'Evidence'], ['fixed', 'Fixed']]} value={st.restMode === 'fixed' ? 'fixed' : 'evidence'} onChange={(v) => setSettings({ restMode: v })} />
+      </Row>
+      {st.restMode === 'fixed' && (
+        <Row label="Fixed rest" onClick={() => restSheet(st.rest, (v) => setSettings({ rest: v }), { noDefault: true })}>
+          <span class="muted">{st.rest ? fmtClock(st.rest) : 'Off'}</span><Icon name="right" size={18} class="muted" />
+        </Row>
+      )}
+      {why && <div class="set-why"><Why id="rest" label="Why these rest times?" /></div>}
+    </>
+  );
+}
+export function JumpSetting({ st, why = true }) {
+  const auto = st.jumpMode !== 'fixed';
+  return (
+    <>
+      <Row label="Weight jumps in targets" sub={auto ? 'About 5% lower-body lifts, 2.5% others' : 'Same jump for every exercise'}>
+        <Seg options={[['auto', 'Evidence'], ['fixed', 'Fixed']]} value={auto ? 'auto' : 'fixed'} onChange={(v) => setSettings({ jumpMode: v })} />
+      </Row>
+      <Row label={auto ? 'Smallest step' : 'Jump'} sub={auto ? 'Jumps round to this, never smaller' : 'Added at the top of your rep range'}>
+        <Seg options={st.unit === 'lb' ? [[2.5, '2.5'], [5, '5'], [10, '10']] : [[1, '1'], [2.5, '2.5'], [5, '5']]}
+          value={st.unit === 'lb' ? st.incLb : st.incKg} onChange={(v) => setSettings(st.unit === 'lb' ? { incLb: v } : { incKg: v })} />
+      </Row>
+      {why && <div class="set-why"><Why id="progression" label="Why these jumps?" /></div>}
+    </>
+  );
+}
+
+export function EffortSetting({ st }) {
+  return (
+    <>
+      <Row label="Rate effort after each set" sub="Off by default; each workout can turn it on or off">
+        <Toggle on={!!st.effortDefault} onChange={(v) => setSettings({ effortDefault: v })} label="Rate effort after each set" />
+      </Row>
+      <Row label="Effort scale" sub={st.effortScale === 'rpe' ? 'RPE 10 = no reps left, 9 = one left' : 'How many more reps you could have done'}>
+        <Seg options={[['rir', 'RIR'], ['rpe', 'RPE']]} value={st.effortScale || 'rir'} onChange={(v) => setSettings({ effortScale: v })} />
+      </Row>
+    </>
   );
 }
 
@@ -71,28 +117,18 @@ export function SettingsScreen() {
             <Row label="Weight unit" sub="Changes how every weight is shown; nothing is lost">
               <Seg options={[['lb', 'lb'], ['kg', 'kg']]} value={st.unit} onChange={(v) => setSettings({ unit: v })} />
             </Row>
-            <Row label="Default rest timer" onClick={() => restSheet(st.rest, (v) => setSettings({ rest: v == null ? 120 : v }))}>
-              <span class="muted">{st.rest ? fmtClock(st.rest) : 'Off'}</span><Icon name="right" size={18} class="muted" />
-            </Row>
+            <RestSetting st={st} />
             <Row label="Rest timer sound">
               <Toggle on={st.sound} onChange={(v) => setSettings({ sound: v })} label="Rest timer sound" />
             </Row>
             <Row label="Keep screen on during workouts">
               <Toggle on={st.keepAwake} onChange={(v) => setSettings({ keepAwake: v })} label="Keep screen on" />
             </Row>
-            <Row label="Rate effort after each set" sub="Off by default; each workout can turn it on or off">
-              <Toggle on={!!st.effortDefault} onChange={(v) => setSettings({ effortDefault: v })} label="Rate effort after each set" />
-            </Row>
-            <Row label="Effort scale" sub={st.effortScale === 'rpe' ? 'RPE 10 = no reps left, 9 = one left' : 'How many more reps you could have done'}>
-              <Seg options={[['rir', 'RIR'], ['rpe', 'RPE']]} value={st.effortScale || 'rir'} onChange={(v) => setSettings({ effortScale: v })} />
-            </Row>
+            <EffortSetting st={st} />
             <Row label="Session targets" sub="Aim for each set based on your last session">
               <Toggle on={st.targets} onChange={(v) => setSettings({ targets: v })} label="Session targets" />
             </Row>
-            <Row label="Weight jump in targets" sub="Added once you hit the top of your rep range">
-              <Seg options={st.unit === 'lb' ? [[2.5, '2.5'], [5, '5'], [10, '10']] : [[1, '1'], [2.5, '2.5'], [5, '5']]}
-                value={st.unit === 'lb' ? st.incLb : st.incKg} onChange={(v) => setSettings(st.unit === 'lb' ? { incLb: v } : { incKg: v })} />
-            </Row>
+            <JumpSetting st={st} />
           </div>
         </section>
 

@@ -10,8 +10,8 @@ export const minText = (sec) => `${Math.max(1, Math.round(sec / 60))} min`;
 export function useEstimate(items) {
   const s = useStore();
   const exercises = allExercises(s);
-  const cal = useMemo(() => calibration(s.workouts, exercises, s.settings.rest), [s.workouts, exercises, s.settings.rest]);
-  const sec = useMemo(() => estimateTemplate(items, exercises, s.settings.rest, cal.k), [items, exercises, s.settings.rest, cal.k]);
+  const cal = useMemo(() => calibration(s.workouts, exercises, s.settings), [s.workouts, exercises, s.settings]);
+  const sec = useMemo(() => estimateTemplate(items, exercises, s.settings, cal.k), [items, exercises, s.settings, cal.k]);
   return { sec, cal };
 }
 
@@ -21,7 +21,7 @@ function TimeboxSheet({ t, close, onStart }) {
   const { sec: full, cal } = useEstimate(t.items);
   const fullMin = Math.round(full / 60);
   const [budget, setBudget] = useState(() => Math.max(10, Math.min(90, Math.floor((fullMin - 5) / 5) * 5 || 30)));
-  const res = useMemo(() => fitToTime(t.items, exercises, budget, { defRest: s.settings.rest, k: cal.k }), [t.items, exercises, budget, s.settings.rest, cal.k]);
+  const res = useMemo(() => fitToTime(t.items, exercises, budget, { settings: s.settings, k: cal.k }), [t.items, exercises, budget, s.settings, cal.k]);
   const changed = res.changes.filter((c) => c.dropped || c.sets[0] !== c.sets[1] || c.rest[0] !== c.rest[1]);
   const fitsAlready = full <= budget * 60;
   return (
