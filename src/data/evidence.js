@@ -8,7 +8,7 @@ export const EVIDENCE = {
   goal: {
     title: 'Training for your goal',
     summary: 'Most of the evidence applies to every goal: train each major muscle group at least twice a week, take sets close to failure, and progress over time. Goals differ in a few places. Muscle grows across a wide range of loads when sets are hard, but strength improves most with heavier loads. Strength gains level off at lower weekly volumes than muscle size. Resting over 2 minutes helps maximize strength in experienced lifters. And the pace of weight change matters: about 0.5–1% of bodyweight a week when losing and 0.25–0.5% when gaining helps keep muscle and limit fat gain.',
-    app: 'Your main goal sets the rep ranges for exercises you add to a workout (Get stronger: compound lifts 3–6, isolation 8–12; Get big and Get big and ripped: 6–10 and 10–15; the others: 8–12 and 10–15; these exact ranges are the app’s choices within the evidence), rest in Evidence mode (Get stronger gives compound lifts at least 2:30), how weekly coverage describes 4–9 sets, and which pace of weight change the app checks you against, including a tip on Train and Progress when your bodyweight trend runs the wrong way or too fast. Without a goal the app behaves like General well-being.',
+    app: 'Your main goal sets the rep ranges for exercises you add to a workout (Get stronger: compound lifts 3–6, isolation 8–12; Get big and Get big and ripped: 6–10 and 10–15; the others: 8–12 and 10–15; these exact ranges are the app’s choices within the evidence), which rest rules apply (see Rest between sets: only Get stronger gets longer rest, on compound lifts), how weekly coverage describes 4–9 sets, and which pace of weight change the app checks you against, including a tip on Train and Progress when your bodyweight trend runs the wrong way or too fast. Without a goal the app behaves like General well-being.',
     where: 'Asked once when you first open the app; Settings → Main goal; Progress → Goals',
     setting: 'goal',
     refs: [
@@ -44,21 +44,22 @@ export const EVIDENCE = {
   },
   rest: {
     title: 'Rest between sets',
-    summary: 'It depends on how heavy the sets are. For muscle growth, ACSM recommends 1–2 minutes, and a 2024 meta-analysis found a small benefit from resting more than about 60 seconds but no clear extra benefit past about 90 seconds. For heavy sets aimed at strength, ACSM recommends 3–5 minutes for intermediate and advanced lifters, and a systematic review found that resting more than 2 minutes is needed to get the most strength out of training in experienced lifters (60–120 seconds was enough for beginners).',
-    app: 'With the rest timer on Evidence (the default), rest follows each exercise’s rep target: 6 reps or fewer counts as heavy and gets 3:00 (the low end of ACSM’s 3–5 minutes, and over the 2 minutes from the strength review); anything else gets 1:30 (inside ACSM’s 1–2 minutes and at the point past which growth stops improving). Timed holds get 1:00, the app’s own choice. Exercises without a rep target get 1:30. With the Get stronger goal, compound lifts get at least 2:30 and isolation work 1:30 (ACSM’s 1–2 minutes for assistance exercises). A time you pick for an exercise always wins. Fit to time may shorten lighter sets to 1:15 (still over 60 seconds), won’t cut heavy sets, or compound lifts when training for strength, below 2:30, and never changes a rest you picked.',
-    where: 'Settings → Rest timer; the timer after each set says why (for example “muscle-building sets”); exercise rest buttons show “Auto”',
+    summary: 'ACSM recommends 1–2 minutes of rest in beginner and intermediate muscle-building programs (advanced lifters may use 2–3 minutes on heavy core lifts), at least 2–3 minutes for core (multi-joint) lifts using heavier loads when training for strength, and 1–2 minutes for assistance exercises. A 2024 meta-analysis on muscle growth found a small benefit from resting more than about 60 seconds, and no clear extra benefit past about 90 seconds. For strength, a 2018 review found experienced lifters need more than 2 minutes between sets to get the most out of training, while 60–120 seconds was enough for beginners.',
+    app: 'Evidence-based rest (on by default) uses the rules below, based on your main goal, the type of exercise and, for strength, how long you’ve been lifting. ACSM’s longer strength rest is for core lifts using heavier loads. Get stronger starts compound lifts at 3–6 reps, and every compound work set gets the strength rest, whatever its rep range, rather than the app guessing set by set. Warm-up sets get 1:00, the app’s own choice. A rest you set on an exercise always wins, and turning evidence-based rest off uses one fixed rest for everything.',
+    rules: 'rest',
+    where: 'Settings → Evidence-based rest; tap the rest timer to see which rule applied',
     setting: 'rest',
     refs: [
-      { cite: 'Ratamess NA, Alvar BA, Evetoch TK, et al. (2009). ACSM Position Stand. Progression Models in Resistance Training for Healthy Adults. Med Sci Sports Exerc 41(3):687–708. (3–5 min between heavy sets for strength; 1–2 min for hypertrophy.)', url: doi('10.1249/MSS.0b013e3181915670') },
+      { cite: 'Ratamess NA, Alvar BA, Evetoch TK, et al. (2009). ACSM Position Stand. Progression Models in Resistance Training for Healthy Adults. Med Sci Sports Exerc 41(3):687–708.', url: doi('10.1249/MSS.0b013e3181915670') },
       { cite: 'Singer A, Wolf M, Generoso L, et al. (2024). Give it a rest: a systematic review with Bayesian meta-analysis on the effect of inter-set rest interval duration on muscle hypertrophy. Front Sports Act Living 6:1429789.', url: doi('10.3389/fspor.2024.1429789') },
       { cite: 'Grgic J, Schoenfeld BJ, Skrepnik M, Davies TB, Mikulic P (2018). Effects of Rest Interval Duration in Resistance Training on Measures of Muscular Strength: A Systematic Review. Sports Med 48(1):137–151.', url: doi('10.1007/s40279-017-0788-x') },
-      { cite: 'Schoenfeld BJ, Pope ZK, Benik FM, et al. (2016). Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men. J Strength Cond Res 30(7):1805–1812.', url: doi('10.1519/JSC.0000000000001272') },
     ],
   },
+
   timeEfficient: {
     title: 'Training when short on time',
     summary: 'A review of time-efficient training recommends prioritising multi-joint lifts (at least a squat or leg press, an upper-body push and an upper-body pull), doing at least 4 hard sets per muscle per week, and remembering that weekly volume matters more than frequency. Supersets and similar techniques can roughly halve session time.',
-    app: 'Fit to time protects compound lifts longest, in line with the review’s priority on multi-joint exercises. The rest of the trimming order is the app’s own rule of thumb: shorten rest on lighter sets (to no less than 1:15) and heavy sets (to no less than 2:30), leaving rests you picked alone, drop accessories that repeat a muscle already trained that session, then trim accessory sets before compound sets.',
+    app: 'Fit to time protects compound lifts longest, in line with the review’s priority on multi-joint exercises. The rest of the trimming order is the app’s own rule of thumb: first shorten rest, never below each rest rule’s floor (1:30 rests to 1:15, still over 60 seconds; compound lifts when training for strength stay at 2:00 for beginners, the top of the 60–120 seconds the 2018 review found enough, and 2:30 for experienced lifters, still over 2 minutes) and never a rest you picked or a fixed rest; then drop accessories that repeat a muscle already trained that session, then trim accessory sets before compound sets.',
     where: 'Train → tap a workout → Short on time? Fit it in (also under your program’s next day)',
     refs: [
       { cite: 'Iversen VM, Norum M, Schoenfeld BJ, Fimland MS (2021). No Time to Lift? Designing Time-Efficient Training Programs for Strength and Hypertrophy: A Narrative Review. Sports Med 51(10):2079–2095.', url: doi('10.1007/s40279-021-01490-1') },
@@ -77,7 +78,7 @@ export const EVIDENCE = {
   load: {
     title: 'Heavy or light weights',
     summary: 'You can build muscle across a wide rep range when sets are taken close to failure. Heavier loads build more maximal strength.',
-    app: 'Rep ranges in your saved workouts can be anything that suits you, and start from your main goal. Targets add weight once you reach the top of your range (two sessions in a row with Evidence weight jumps).',
+    app: 'Rep ranges in your saved workouts can be anything that suits you, and new ones start from your main goal. With evidence-based progression on, targets add weight after you go past the top of the range two sessions in a row.',
     where: 'Plans → a workout → each exercise’s rep range; workout targets',
     refs: [
       { cite: 'Lopez P, Radaelli R, Taaffe DR, et al. (2021). Resistance Training Load Effects on Muscle Hypertrophy and Strength Gain: Systematic Review and Network Meta-analysis. Med Sci Sports Exerc 53(6):1206–1216.', url: doi('10.1249/MSS.0000000000002585') },
@@ -124,15 +125,19 @@ export const EVIDENCE = {
   },
   progression: {
     title: 'When to add weight',
-    summary: 'ACSM’s progression guidance: once you can do 1–2 reps more than your target in two sessions in a row, add about 2–10% load (less for small muscle groups, more for large ones). The 2026 position stand recommends progressive training, noting overload matters most for continued long-term progress.',
-    app: 'Targets use double progression: a rep more each session until every set reaches the top of your rep range, then a weight jump and back to the bottom of the range. With weight jumps on Evidence (the default), the jump follows ACSM: it comes after you reach the top of the range on every set in two sessions in a row, and it’s about 5% of the working weight for lower-body compound lifts and 2.5% for everything else (the app’s choice within ACSM’s 2–10%), rounded to your smallest step. It’s never less than one step, so light lifts can jump more than 10%; the target says so, and a smaller step in Settings avoids it. Fixed adds the same jump after a single session. If you rate effort and your reps plus reps left reach the top of the range with 2+ to spare, the jump comes after one session (an app rule of thumb). Bodyweight exercises add a rep each session up to the top of the range, then suggest added weight or a harder variation.',
-    where: 'Workout targets (an “up” target shows the jump as a %); Settings → Weight jumps',
+    summary: 'ACSM recommends increasing the load by 2–10% once you can do 1–2 more reps than your target on two training sessions in a row, using a lower percent for small muscle mass exercises and a higher percent for large ones. The 2026 position stand recommends progressive training, noting overload matters most for continued long-term progress.',
+    app: 'Evidence-based progression (on by default) follows the steps below. Turned off, targets use classic double progression instead: add your chosen jump after one session at the top of the range.',
+    rules: 'progression',
+    where: 'Workout targets (each says which step you’re on); Settings → Evidence-based progression',
     setting: 'progression',
     refs: [
       { cite: 'Ratamess NA, Alvar BA, Evetoch TK, et al. (2009). ACSM Position Stand. Progression Models in Resistance Training for Healthy Adults. Med Sci Sports Exerc 41(3):687–708.', url: doi('10.1249/MSS.0b013e3181915670') },
       { cite: 'Currier BS, et al. (2026). ACSM Position Stand (see Weekly sets).', url: doi('10.1249/MSS.0000000000003897') },
+      { cite: 'Zourdos MC, Klemp A, Dolan C, et al. (2016). Novel Resistance Training–Specific Rating of Perceived Exertion Scale Measuring Repetitions in Reserve. J Strength Cond Res 30(1):267–275.', url: doi('10.1519/JSC.0000000000001049') },
+      { cite: 'Halperin I, Malleron T, Har-Nir I, et al. (2022). Accuracy in Predicting Repetitions to Task Failure in Resistance Exercise: A Scoping Review and Exploratory Meta-analysis. Sports Med 52(2):377–390.', url: doi('10.1007/s40279-021-01559-x') },
     ],
   },
+
   e1rm: {
     title: 'Estimated 1RM',
     summary: 'Formulas like Brzycki and Epley estimate your one-rep max from a set of several reps. They are approximations; a common rule of thumb is that they’re more reliable from lower-rep sets (about 10 or fewer). In one study of untrained students, every common equation underestimated the deadlift.',
@@ -174,7 +179,7 @@ export const EVIDENCE = {
   effort: {
     title: 'Rating effort (RIR and RPE)',
     summary: 'Reps in reserve (RIR) is how many more reps you could have done. The RIR-based RPE scale maps RPE 10 to no reps left, RPE 9 to one left, and so on. In a meta-analysis, people underestimated their reps left by about one on average, and were a little more accurate closer to failure and on sets under about 12 reps.',
-    app: 'Effort is optional. When you log it, estimated 1RM uses your reps plus reps left (reps left capped at 5, and never past 12 reps in total), so an easier day doesn’t look like lost strength. If your reps plus reps left reach the top of your rep range with at least 2 left on every top set (or 3+ left when the exercise has no range), the next target adds weight after one session, an app rule of thumb. Targets also suggest finishing with 1–3 reps left. RPE is stored as reps left, so RPE 8 = 2 left.',
+    app: 'Effort is optional. When you log it, estimated 1RM uses your reps plus reps left (reps left capped at 5, and never past 12 reps in total), so an easier day doesn’t look like lost strength. Reps you had left also count toward going past the top of your rep range (see When to add weight). Targets suggest finishing with 1–3 reps left. RPE is stored as reps left, so RPE 8 = 2 left.',
     where: 'Settings → Rate effort; the toggle at the bottom of every workout; Plans → a workout → Rate effort',
     setting: 'effort',
     refs: [

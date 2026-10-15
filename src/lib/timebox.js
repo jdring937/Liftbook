@@ -2,24 +2,23 @@
 // Estimate: each set takes its working time plus rest, plus a little setup per exercise,
 // scaled by how long your past sessions actually took compared with the same estimate.
 // Loosely informed by Iversen et al. 2021 (prioritise multi-joint lifts). The trimming order is an
-// app heuristic: shorten rest on lighter sets (not below 75 s) and heavy sets (not below 2:30),
-// drop accessories that repeat a muscle, then trim accessory sets before compound sets.
+// app heuristic: shorten rest down to each rest rule's floor (rest.js), drop accessories that
+// repeat a muscle, then trim accessory sets before compound sets.
 import { isWork } from './calc.js';
 import { isCompound } from './exkind.js';
-import { restFor } from './rest.js';
+import { plannedRest } from './rest.js';
 
 export { isCompound } from './exkind.js';
 
 const SETUP = 45; // seconds to set up / move between exercises
-const LIGHT_REST_FLOOR = 75; // still above the 60 s below which growth tends to suffer
-const HEAVY_REST_FLOOR = 150; // rest over 2 min helps strength in trained lifters
 
 function workSec(ex, reps) {
   if (ex && ex.kind === 'time') return 45;
   return 15 + 3 * (reps || 10);
 }
 // rest the session will actually use; a timer that's off still means some rest (about a minute)
-const restOf = (rest, ex, target, settings) => { const r = restFor(rest, ex, target, settings); return r === 0 ? 60 : r; };
+const planned = (rest, ex, target, settings) => plannedRest({ rest, ex, settings });
+const restOf = (rest, ex, target, settings) => { const r = planned(rest, ex, target, settings).sec; return r === 0 ? 60 : r; };
 
 // raw estimate in seconds for [{ sets, rest, reps, ex }]
 function rawEstimate(rows) {
@@ -53,6 +52,8 @@ function rowsFor(items, exercises, settings) {
   return items.map((it, i) => ({
     i, exId: it.exId, ex: exercises[it.exId], sets: it.sets || 0, origSets: it.sets || 0,
     rest: restOf(it.rest, exercises[it.exId], it, settings), origRest: restOf(it.rest, exercises[it.exId], it, settings), reps: it.max || it.min || 10,
+    // how low fit-to-time may cut this rest: the evidence rule's floor (none for a rest you picked)
+    floor: (planned(it.rest, exercises[it.exId], it, settings).rule || { floor: Infinity }).floor,
     compound: isCompound(exercises[it.exId]), dropped: false, item: it,
   }));
 }
@@ -89,17 +90,15 @@ export function fitToTime(items, exercises, budgetMin, { settings, k = 1 } = {})
   const comp = (r) => r.compound;
 
   // shorten rest one exercise at a time, last exercise first, only as far as needed
-  // a rest the user picked for an exercise is left alone
-  const capRest = (pred, cap) => {
+  // shorten rest one exercise at a time, last first, never below each rule's floor; a rest the user
+  // picked for an exercise is left alone
+  const capRest = () => {
     for (const r of [...live()].reverse()) {
       if (fits()) return;
-      if (pred(r) && r.item.rest == null && r.rest > cap) r.rest = cap;
+      if (r.item.rest == null && r.rest > r.floor) r.rest = r.floor;
     }
   };
-  // strength work keeps over 2 minutes: heavy sets, and compound lifts when training for strength
-  const heavy = (r) => r.reps <= 6 || (settings && settings.goal === 'strong' && r.compound);
-  capRest((r) => !heavy(r), LIGHT_REST_FLOOR);
-  capRest(heavy, HEAVY_REST_FLOOR);
+  capRest();
   // accessories whose main muscles an earlier exercise already trains as a main muscle
   dropFromEnd((r) => iso(r) && r.ex && r.ex.primary.every((m) => live().some((o) => o.i < r.i && o.ex && o.ex.primary.includes(m))));
   trimTo(iso, 2);

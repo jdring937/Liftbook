@@ -4,6 +4,26 @@ import { Icon, Header, openSheet, pop } from '../ui.jsx';
 import { useStore } from '../store.js';
 import { RestSetting, JumpSetting, EffortSetting } from '../screens/settings.jsx';
 import { GoalBanner } from './trainingGoal.jsx';
+import { REST_RULES } from '../lib/rest.js';
+import { PROGRESSION_RULES } from '../lib/progression.js';
+import { fmtClock } from '../lib/util.js';
+
+// The same rule tables the app runs on, so the page can't say something the app doesn't do
+function RuleTable({ which }) {
+  const rows = which === 'rest'
+    ? REST_RULES.map((r) => ({ when: r.when, does: fmtClock(r.sec), because: r.because }))
+    : PROGRESSION_RULES;
+  return (
+    <ol class={'rules rules-' + which}>
+      {rows.map((r, i) => (
+        <li key={i} class="rule">
+          <div class="rule-top"><span class="rule-when">{r.when}</span><strong class="rule-does">{r.does}</strong></div>
+          <p class="rule-why small">{r.because}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 const SETTING = { rest: RestSetting, progression: JumpSetting, effort: EffortSetting, goal: GoalBanner };
 function SettingInline({ which }) {
@@ -25,6 +45,7 @@ function EvidenceBody({ e }) {
         <div class="ev-app">
           <strong>In Swellness</strong>
           <p>{e.app}</p>
+          {e.rules && <RuleTable which={e.rules} />}
           {e.where && <p class="ev-where"><span>Where you’ll see it:</span> {e.where}</p>}
         </div>
       )}

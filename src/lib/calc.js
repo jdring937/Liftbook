@@ -1,5 +1,6 @@
 import { MUSCLES } from '../data/exercises.js';
-import { isLowerCompound } from './exkind.js';
+import { weightJump, repsCapacity, beatTop, effLoad } from './progression.js';
+import { isAssisted } from './exkind.js';
 import { DAY, startOfDay, startOfWeek, startOfMonth, addDays, addMonths } from './util.js';
 
 // Estimated one-rep max. Brzycki: w * 36 / (37 - r). Epley: w * (1 + r / 30).
@@ -173,39 +174,24 @@ export function lastSetsFor(workouts, exId, beforeT = Infinity) {
 // range, add one increment and drop back to the bottom of the range; otherwise keep the
 // weight and add a rep to each set, capped at the top of the range.
 // Without a range: keep the weight and beat each set by a rep.
-// Weight jump for a target. Fixed: the jump set in Settings. Auto: a share of the working weight in
-// line with ACSM's 2-10% guidance (about 5% for lower-body compound lifts, 2.5% otherwise), rounded
-// to the jump in Settings, which then acts as the smallest step you can load.
-export function weightJump(top, ex, stepKg, mode = 'fixed') {
-  if (mode !== 'auto' || !top) return stepKg;
-  const pct = isLowerCompound(ex) ? 0.05 : 0.025;
-  return Math.max(1, Math.round((top * pct) / stepKg)) * stepKg;
-}
+export { weightJump } from './progression.js';
 
-// For ACSM-style progression: true when the session before last also reached the top of the
-// range on every top-weight set, at the same weight or heavier
-export function topOfRangeHit(sets, max, atLeastKg) {
-  const work = (sets || []).filter((s) => s.type !== 'w');
-  if (!work.length || !max) return false;
-  const top = Math.max(...work.map((s) => s.w || 0));
-  if (top + 1e-6 < atLeastKg) return false;
-  return work.filter((s) => (s.w || 0) === top).every((s) => (s.r || 0) >= max);
-}
-
-// Session targets. opts.deload: deload week. opts.jumpMode: 'auto' | 'fixed'.
+// Session targets. opts.deload: deload week. opts.jumpMode: 'auto' (evidence-based, see
+// progression.js) | 'fixed' (classic double progression). opts.prev2: the session before last.
 // opts.effort: 'rir' | 'rpe' when effort rating is on, so targets also suggest an effort.
 export function sessionTargets(prev, ex, range, incKg, opts = {}) {
   const work = prev ? prev.sets.filter((s) => s.type !== 'w') : [];
   if (!work.length) return null;
   const min = range && range.min ? range.min : null;
   const max = range && range.max ? range.max : null;
-  // deload week: about half the sets, same weight, easier reps
+  const evidence = opts.jumpMode !== 'fixed';
+  // deload week: about half the sets, same weight, 3 fewer reps than last time (holds keep their time)
   if (opts.deload) {
     const half = work.slice(0, Math.max(1, Math.ceil(work.length / 2)));
+    const hold = ex.kind === 'time';
     return {
-      // same weight, about 3 reps fewer than last time (never above the bottom of the range)
-      sets: half.map((s) => ({ w: s.w ?? null, r: ex.kind === 'time' ? undefined : Math.max(1, Math.min(min || s.r || 1, (s.r || 0) - 3)), t: ex.kind === 'time' ? s.t : undefined })),
-      kind: 'deload', note: 'Deload: same weight, about 3 fewer reps than last time',
+      sets: half.map((s) => ({ w: s.w ?? null, r: hold ? undefined : Math.max(1, (s.r || 0) - 3), t: hold ? s.t : undefined })),
+      kind: 'deload', note: hold ? 'Deload: half the sets, same time as last time' : 'Deload: half the sets, same weight, 3 fewer reps than last time',
     };
   }
   // close to failure without going all the way (about 0–3 reps left); suggested when effort rating is on
@@ -213,59 +199,59 @@ export function sessionTargets(prev, ex, range, incKg, opts = {}) {
   if (ex.kind === 'time') {
     return { sets: work.map((s) => ({ w: s.w ?? null, t: (s.t || 0) + 5 })), kind: 'more', note: '5 seconds longer than last time' };
   }
-  if (ex.kind === 'reps') {
-    // bodyweight moves: a rep more each time up to the top of the range, then add load or a harder variation
-    if (max && work.every((s) => (s.r || 0) >= max)) {
-      return { sets: work.map((s) => ({ w: s.w ?? null, r: s.r })), kind: 'up', aim, note: `Top of the range: add weight or move to a harder variation, then build back up from ${min || max - 4}` };
-    }
-    return { sets: work.map((s) => ({ w: s.w ?? null, r: max ? Math.min(max, (s.r || 0) + 1) : (s.r || 0) + 1 })), kind: 'more', note: 'One more rep per set than last time', aim };
-  }
-  const top = Math.max(...work.map((s) => s.w || 0));
-  const topSets = work.filter((s) => (s.w || 0) === top);
-  const jump = weightJump(top, ex, incKg, opts.jumpMode);
-  const jumpPct = top ? Math.round((jump / top) * 1000) / 10 : 0;
-  const jumpNote = opts.jumpMode === 'auto' && top ? (jumpPct > 10 ? ` (+${jumpPct}%, your smallest step)` : ` (+${jumpPct}%)`) : '';
-  // reps in reserve logged on every top set: go heavier when the reps you had left would have
-  // reached the top of the range (with at least 2 to spare), or 3+ left with no range
-  if (top > 0 && topSets.length && topSets.every((s) => s.rir != null)) {
-    const could = max ? topSets.every((s) => (s.r || 0) + s.rir >= max && s.rir >= 2) : topSets.every((s) => s.rir >= 3);
-    const already = max && topSets.every((s) => (s.r || 0) >= max);
-    // reps left show capacity past the target, so the jump comes after one session (an app rule of thumb)
-    if (could && (!already || opts.jumpMode === 'auto')) {
-      return {
-        sets: work.map((s) => ({ w: (s.w || 0) === top ? top + jump : s.w, r: min || s.r })),
-        kind: 'up', aim, jump,
-        note: !max ? `Heavier${jumpNote}: you had 3+ reps left on every set last time`
-          : already ? `Heavier${jumpNote}: you hit ${max} on every set with reps to spare`
-            : `Heavier${jumpNote}: with the reps you had left, you could have hit ${max} on every set`,
-      };
-    }
-  }
-  if (top > 0 && max && topSets.every((s) => (s.r || 0) >= max)) {
-    // Evidence mode follows ACSM: add load after hitting the target in two sessions in a row
-    if (opts.jumpMode === 'auto' && !opts.prev2Hit) {
-      return {
-        sets: work.map((s) => ({ w: s.w, r: s.r })),
-        kind: 'match', aim,
-        note: `Hit ${max} on every set again to earn the jump (two sessions in a row)`,
-      };
-    }
-    return {
-      sets: work.map((s) => ({ w: (s.w || 0) === top ? top + jump : s.w, r: min || Math.max(1, max - 4) })),
-      kind: 'up', aim, jump,
-      note: `Heavier${jumpNote}: you hit ${max} reps on every set last time`,
-    };
-  }
-  const sets = work.map((s) => {
-    let r = (s.r || 0) + 1;
-    if (max) r = Math.min(max, r);
-    if (min) r = Math.max(min, r);
-    return { w: s.w, r };
+  // "top weight" = the heaviest load; on assisted machines that's the least assistance
+  const assisted = ex.kind === 'weight' && isAssisted(ex);
+  const topEff = Math.max(...work.map((s) => effLoad(s, assisted)));
+  const top = Math.abs(topEff);
+  const isTop = (s) => effLoad(s, assisted) === topEff;
+  const topSets = work.filter(isTop);
+  // evidence mode counts reps left (RIR) as reps you could have done; fixed mode uses reps done
+  const atTop = max && topSets.every((s) => repsCapacity(s) >= max);
+  const pastTop = max && topSets.every((s) => repsCapacity(s) >= max + 1);
+  const pastTopBefore = max && opts.prev2 && beatTop(opts.prev2, max, topEff, assisted);
+  const atTopDone = max && topSets.every((s) => (s.r || 0) >= max);
+  const rated = (sets) => (sets || []).some((s) => s.type !== 'w' && (s.rir || 0) > 0);
+  const counting = rated(topSets) || rated(opts.prev2) || !!opts.effort;
+  const withLeft = counting ? ', counting reps left' : '';
+  const bump = (r) => (max ? Math.min(max, r + 1) : r + 1);
+  const moreReps = () => {
+    const sets = work.map((s) => ({ w: s.w ?? null, r: Math.max(min || 0, bump(s.r || 0)) }));
+    const same = sets.every((t, i) => t.r === work[i].r);
+    const raised = sets.some((t, i) => t.r > (work[i].r || 0) + 1);
+    return { sets, kind: same ? 'match' : 'more', aim, note: same ? 'Match last time' : raised ? `At least ${min} reps per set (the bottom of your range)` : 'One more rep per set than last time' };
+  };
+  // one past the top on top-weight sets; lighter back-off sets just add a rep
+  const onePast = (pastAlready, what) => ({
+    sets: work.map((s) => ({ w: s.w ?? null, r: isTop(s) ? max + 1 : bump(s.r || 0) })), kind: 'more', aim,
+    note: (pastAlready ? `Go past ${max} on ${what} again to earn the ${ex.kind === 'reps' ? 'next step' : 'jump'} (two sessions in a row)` : `Go one past ${max} on ${what}`) + withLeft,
   });
-  const same = sets.every((t, i) => t.r === work[i].r);
-  const big = sets.some((t, i) => t.r - (work[i].r || 0) > 1);
-  const note = same ? 'Match last time' : big ? (min === max ? `Aim for ${max} reps` : `Work up to ${min}–${max} reps`) : 'One more rep per set than last time';
-  return { sets, kind: same ? 'match' : 'more', note, aim };
+
+  if (ex.kind === 'reps') {
+    if (evidence ? pastTop && pastTopBefore : atTopDone) {
+      return { sets: work.map((s) => ({ w: s.w ?? null, r: s.r })), kind: 'up', aim, note: `${evidence ? `Past the top of the range two sessions in a row${withLeft}` : 'At the top of the range'}: add weight or a harder variation, then build back up from ${min || max - 4}` };
+    }
+    if (evidence && atTop) return onePast(pastTop, 'every set');
+    return moreReps();
+  }
+
+  const jump = assisted ? incKg : weightJump(top, ex, incKg, evidence ? 'auto' : 'fixed');
+  const jumpPct = top ? Math.round((jump / top) * 1000) / 10 : 0;
+  const jumpNote = evidence && top && !assisted ? (jumpPct > 10 ? ` (+${jumpPct}%, your smallest step)` : ` (+${jumpPct}%)`) : '';
+  const heavier = (why) => ({
+    sets: work.map((s) => ({ w: isTop(s) ? (assisted ? Math.max(0, top - jump) : top + jump) : s.w, r: min || Math.max(1, max - 4) })),
+    kind: 'up', aim, jump, note: `${assisted ? 'Less assistance' : `Heavier${jumpNote}`}: ${why}`,
+  });
+  if (top > 0 && max) {
+    if (evidence) {
+      if (pastTop && pastTopBefore) return heavier(`past ${max} on every top-weight set two sessions in a row${withLeft}`);
+      if (atTop) return onePast(pastTop, 'every top-weight set');
+    } else if (atTopDone) {
+      return heavier(`you hit ${max} reps on every top-weight set last time`);
+    }
+  }
+  const t = moreReps();
+  if (!max && evidence) t.note += '. Set a rep range to get weight targets';
+  return t;
 }
 
 // Heaviest weight lifted for exactly N reps (only rep counts you have done)

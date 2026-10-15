@@ -54,7 +54,7 @@ function TimeboxSheet({ t, close, onStart }) {
           <p class={'tb-est' + (res.fits ? '' : ' warn')}>
             {res.fits ? <>New estimate: <strong>about {minText(res.est)}</strong></> : <>The shortest sensible version is about <strong>{minText(res.est)}</strong>.</>}
           </p>
-          <p class="small muted">Rest is shortened first (lighter sets to no less than 1:15, heavy sets to no less than 2:30, and never a rest you picked yourself). Then accessories that repeat a muscle you’ve already trained are dropped, and accessory sets are trimmed before compound lifts. <Why id="timeEfficient" /></p>
+          <p class="small muted">Rest is shortened first (1:30 rests to no less than 1:15, strength rests on compound lifts kept at 2:00 or more, and never a rest you picked yourself or a fixed rest). Then accessories that repeat a muscle you’ve already trained are dropped, and accessory sets are trimmed before compound lifts. <Why id="timeEfficient" /></p>
         </>
       )}
       <button class="btn btn-primary full mt-16" disabled={!res.items.length} onClick={() => { close(); onStart(fitsAlready ? t : { ...t, items: res.items }); }}>

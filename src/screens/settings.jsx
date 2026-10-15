@@ -7,6 +7,7 @@ import { exportPhotosZip, importPhotosZip } from './photos.jsx';
 import { Why } from '../components/why.jsx';
 import { openGoalSheet } from '../components/trainingGoal.jsx';
 import { GOAL_LABEL } from '../lib/trainingGoal.js';
+import { restSummary } from '../lib/rest.js';
 
 async function shareOrDownload(text, filename, type) {
   const blob = text instanceof Blob ? text : new Blob([text], { type });
@@ -37,38 +38,43 @@ export function Row({ label, sub, children, onClick }) {
   );
 }
 
-// Settings that have an evidence-based mode show it as the first choice, with a "Why?" link
+// Evidence-based settings are plain on/off switches; the line under each says exactly what it does
 export function RestSetting({ st, why = true }) {
+  const on = st.restMode !== 'fixed';
   return (
     <>
-      <Row label="Rest timer" sub={st.restMode === 'fixed' ? 'Same rest for every exercise' : st.goal === 'strong' ? 'Compound 2:30 (3:00 at 6 reps or fewer), isolation 1:30, holds 1:00' : 'Heavy sets (6 reps or fewer) 3:00, others 1:30, holds 1:00'}>
-        <Seg options={[['evidence', 'Evidence'], ['fixed', 'Fixed']]} value={st.restMode === 'fixed' ? 'fixed' : 'evidence'} onChange={(v) => setSettings({ restMode: v })} />
+      <Row label="Evidence-based rest" sub={on ? restSummary(st) : 'Off: the same rest after every set'}>
+        <Toggle on={on} onChange={(v) => setSettings({ restMode: v ? 'evidence' : 'fixed' })} label="Evidence-based rest" />
       </Row>
-      {st.restMode === 'fixed' && (
-        <Row label="Fixed rest" onClick={() => restSheet(st.rest, (v) => setSettings({ rest: v }), { noDefault: true })}>
+      {!on && (
+        <Row label="Rest timer" onClick={() => restSheet(st.rest, (v) => setSettings({ rest: v }), { noDefault: true })}>
           <span class="muted">{st.rest ? fmtClock(st.rest) : 'Off'}</span><Icon name="right" size={18} class="muted" />
         </Row>
       )}
-      {why && <div class="set-why"><Why id="rest" label="Why these rest times?" /></div>}
+      {on && st.goal === 'strong' && (
+        <Row label="Lifting experience" sub="Sets rest on compound lifts when training for strength">
+          <Seg options={[['new', 'Under a year'], ['trained', 'A year +']]} value={st.experience === 'trained' ? 'trained' : 'new'} onChange={(v) => setSettings({ experience: v })} />
+        </Row>
+      )}
+      {why && <div class="set-why"><Why id="rest" label="How rest is picked" /></div>}
     </>
   );
 }
 export function JumpSetting({ st, why = true }) {
-  const auto = st.jumpMode !== 'fixed';
+  const on = st.jumpMode !== 'fixed';
   return (
     <>
-      <Row label="Weight jumps in targets" sub={auto ? 'About 5% lower-body compound lifts, 2.5% others, after two sessions at the top' : 'Same jump after one session at the top'}>
-        <Seg options={[['auto', 'Evidence'], ['fixed', 'Fixed']]} value={auto ? 'auto' : 'fixed'} onChange={(v) => setSettings({ jumpMode: v })} />
+      <Row label="Evidence-based progression" sub={on ? 'After going past your rep range two sessions in a row, add about 5% (compound) or 2.5% (isolation), rounded to your step' : 'Off: add your jump after one session at the top of the range'}>
+        <Toggle on={on} onChange={(v) => setSettings({ jumpMode: v ? 'auto' : 'fixed' })} label="Evidence-based progression" />
       </Row>
-      <Row label={auto ? 'Smallest step' : 'Jump'} sub={auto ? 'Jumps round to this, never smaller' : 'Added at the top of your rep range'}>
+      <Row label={on ? 'Smallest step' : 'Weight jump'} sub={on ? 'Jumps round to this and are never smaller' : 'Added once you hit the top of your rep range'}>
         <Seg options={st.unit === 'lb' ? [[2.5, '2.5'], [5, '5'], [10, '10']] : [[1, '1'], [2.5, '2.5'], [5, '5']]}
           value={st.unit === 'lb' ? st.incLb : st.incKg} onChange={(v) => setSettings(st.unit === 'lb' ? { incLb: v } : { incKg: v })} />
       </Row>
-      {why && <div class="set-why"><Why id="progression" label="Why these jumps?" /></div>}
+      {why && <div class="set-why"><Why id="progression" label="How progression works" /></div>}
     </>
   );
 }
-
 export function EffortSetting({ st }) {
   return (
     <>

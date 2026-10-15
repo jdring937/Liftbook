@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { useStore, setTrainingGoal, markGoalAsked } from '../store.js';
+import { useStore, setTrainingGoal, markGoalAsked, setSettings } from '../store.js';
 import { TRAINING_GOALS, GOAL_LABEL, goalChanges, suggestedGoals } from '../lib/trainingGoal.js';
 import { Icon, openSheet } from '../ui.jsx';
 import { Why } from './why.jsx';
@@ -16,7 +16,16 @@ function GoalSheet({ close, first }) {
         <button class="icon-btn" aria-label="Close" onClick={() => { if (first) markGoalAsked(); close(); }}><Icon name="x" /></button>
       </div>
       <div class="form-body">
-        {!picked ? (
+        {picked === 'strong' && !s.settings.experience ? (
+          <>
+            <p>Have you been lifting regularly for a year or more?</p>
+            <p class="small muted">It decides rest on compound lifts: a review found experienced lifters need more than 2 minutes to get the most strength, while 60–120 seconds was enough for beginners. <Why id="rest" /></p>
+            <div class="stack-8">
+              <button class="btn" onClick={() => setSettings({ experience: 'trained' })}>Yes, a year or more</button>
+              <button class="btn" onClick={() => setSettings({ experience: 'new' })}>Not yet</button>
+            </div>
+          </>
+        ) : !picked ? (
           <>
             <p class="small muted">Your goal sets evidence-based defaults like rep ranges, rest and the pace of weight change. Change it any time in Settings or Goals.</p>
             <div class="tg-list" role="radiogroup" aria-label="Main goal">
@@ -31,7 +40,7 @@ function GoalSheet({ close, first }) {
         ) : (
           <>
             <ul class="tg-changes">
-              {goalChanges(picked).map((c, i) => (
+              {goalChanges(picked, s.settings.experience, s.settings.restMode).map((c, i) => (
                 <li key={i}><Icon name="check" size={16} stroke={2.4} /><span>{c.text} <Why id={c.why} /></span></li>
               ))}
             </ul>

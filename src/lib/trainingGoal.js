@@ -3,6 +3,7 @@
 // progressive overload). Goals differ in load (rep ranges), rest for strength work, how weekly
 // volume is described, and the pace of bodyweight change the app checks against.
 import { isCompound } from './exkind.js';
+import { restSummary } from './rest.js';
 
 export const TRAINING_GOALS = [
   { key: 'lose', label: 'Lose weight', desc: 'Drop body fat while keeping your muscle' },
@@ -33,16 +34,11 @@ export function defaultReps(ex, goal) {
 }
 
 // What the goal changes, for the goal sheet and the science page
-export function goalChanges(goal) {
+export function goalChanges(goal, experience = null, restMode = 'evidence') {
   const p = goalProfile(goal);
   const rows = [
     { why: 'load', text: `New exercises start at ${p.reps.compound[0]}–${p.reps.compound[1]} reps for compound lifts and ${p.reps.isolation[0]}–${p.reps.isolation[1]} for isolation exercises.` },
-    {
-      why: 'rest',
-      text: p.strengthRest
-        ? 'Evidence rest: compound lifts 2:30, or 3:00 at 6 reps or fewer; isolation exercises 1:30; timed holds 1:00.'
-        : 'Evidence rest: 3:00 for heavy sets (6 reps or fewer), 1:30 for everything else, 1:00 for timed holds.',
-    },
+    { why: 'rest', text: restMode === 'fixed' ? 'Rest: your fixed timer, since evidence-based rest is off in Settings.' : `Evidence-based rest: ${restSummary({ restMode: 'evidence', goal, experience }).toLowerCase()}.` },
     {
       why: 'volume',
       text: p.volume === 'strength' ? 'Weekly coverage treats 4–9 sets a muscle as plenty for strength; more mainly adds size.'
