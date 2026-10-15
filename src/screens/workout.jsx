@@ -9,7 +9,7 @@ import { movedLine } from '../components/moved.jsx';
 import { toKg, wNum, fmtW, fmtClock, fmtTime, toLocalInput, fmtDuration, fmtNum, uid, plural, fmtSecs, fmtDateShort, daysAgo } from '../lib/util.js';
 import { Icon, NumInput, Toggle, openSheet, confirmSheet, toast, push, pop, removeScreen, setTab } from '../ui.jsx';
 import { openPicker, musclesText } from './pickers.jsx';
-import { ExThumb, previewSheet, hasPreview } from '../components/preview.jsx';
+import { ExThumb, previewSheet, hasPreview, openMediaSheet } from '../components/preview.jsx';
 import { Why } from '../components/why.jsx';
 import { restAfter, restIsAuto, restRangeLabel, restSummary, RULE } from '../lib/rest.js';
 import { restWhySheet } from '../components/restwhy.jsx';
@@ -226,7 +226,9 @@ function ExerciseBlock({ entry, idx, count, ex, unit, prev, best, targets, formu
       <div class="sheet-pad">
         <h3 class="sheet-title">{ex.name}</h3>
         <div class="menu">
-          {hasPreview(ex.id) && <button class="menu-row" onClick={() => { close(); previewSheet(ex); }}><Icon name="play" size={20} /> How to do it</button>}
+          {hasPreview(ex)
+            ? <button class="menu-row" onClick={() => { close(); previewSheet(ex); }}><Icon name="play" size={20} /> How to do it</button>
+            : <button class="menu-row" onClick={() => { close(); openMediaSheet(ex); }}><Icon name="video" size={20} /> Add a preview</button>}
           <button class="menu-row" onClick={() => { close(); push('exercise', { id: ex.id }); }}><Icon name="progress" size={20} /> History and records</button>
           <button class="menu-row" onClick={() => { close(); onReplace(); }}><Icon name="swap" size={20} /> Replace exercise</button>
           <button class="menu-row" onClick={() => { close(); noteSheet(entry.note, (note) => onChange({ ...entry, note })); }}><Icon name="note" size={20} /> {entry.note ? 'Edit note' : 'Add note'}</button>

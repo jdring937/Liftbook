@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'preact/hooks';
-import { useStore, allExercises, saveCustomExercise } from '../store.js';
+import { useStore, allExercises, saveCustomExercise, setMedia } from '../store.js';
 import { MUSCLES, MUSCLE_NAME, MUSCLE_FILTERS, EQUIPMENT } from '../data/exercises.js';
 import { Icon, Chips, openSheet, toast } from '../ui.jsx';
-import { ExThumb, ExVisual, hasPreview } from '../components/preview.jsx';
+import { ExThumb, ExVisual, hasPreview, hasPhotos, MediaFields, cleanMedia } from '../components/preview.jsx';
 
 export function musclesText(ex) {
   return [...ex.primary, ...ex.secondary].slice(0, 3).map((m) => MUSCLE_NAME[m] || m).join(', ');
@@ -61,7 +61,7 @@ function Peek({ ex, on, onToggle, multi }) {
   const helpers = ex.secondary.map((m) => MUSCLE_NAME[m]).join(', ');
   return (
     <div class="peek">
-      {hasPreview(ex.id)
+      {hasPreview(ex)
         ? <ExVisual ex={ex} compact />
         : <p class="small muted">No preview for this exercise yet.</p>}
       <p class="small peek-muscles">
@@ -160,11 +160,13 @@ function MuscleToggles({ value, onChange, exclude = [] }) {
 
 export function ExerciseForm({ initial = {}, close, onSaved }) {
   const [f, setF] = useState({ name: '', equipment: 'other', kind: 'weight', primary: [], secondary: [], ...initial });
+  const [media, setMediaDraft] = useState(initial.media || null);
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const save = () => {
     if (!f.name.trim()) { toast('Give the exercise a name'); return; }
     if (!f.primary.length) { toast('Pick at least one main muscle'); return; }
     const id = saveCustomExercise({ ...f, name: f.name.trim() });
+    if (!hasPhotos(id)) setMedia(id, cleanMedia(media));
     toast(initial.id ? 'Exercise saved' : 'Exercise created');
     onSaved && onSaved(id);
     close();
@@ -197,6 +199,10 @@ export function ExerciseForm({ initial = {}, close, onSaved }) {
         <div class="field">
           <span>Helper muscles <em class="muted">count half a set</em></span>
           <MuscleToggles value={f.secondary} onChange={(v) => set('secondary', v)} exclude={f.primary} />
+        </div>
+        <div class="form-group">
+          <h4 class="form-group-title">Preview <em class="muted">optional</em></h4>
+          <MediaFields name={f.name} value={media} onChange={setMediaDraft} />
         </div>
       </div>
       <div class="picker-foot">

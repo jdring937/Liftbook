@@ -25,6 +25,8 @@ const P = {
   arrowUp: 'M12 19V5M6 11l6-6 6 6',
   arrowDown: 'M12 5v14M6 13l6 6 6-6',
   play: 'M7 4.5v15l12.5-7.5z',
+  video: 'M3.5 6.5h12v11h-12zM15.5 10.5l5-3v9l-5-3z',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
   edit: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16zM13.5 6.5l4 4',
   copy: 'M9 9h10v11H9zM5 15V4h10',
   share: 'M12 3v12M7.5 7.5L12 3l4.5 4.5M5 13v6.5h14V13',

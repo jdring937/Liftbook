@@ -35,6 +35,8 @@ export function defaultState() {
       restMode: 'evidence', jumpMode: 'auto', goal: null,
     },
     custom: {},
+    // previews people add to exercises without a built-in one: { [exId]: { src, srcName, steps, yt, ytStart, ytTall } }
+    media: {},
     templates: [],
     programs: [],
     activeProgram: null,
@@ -118,6 +120,7 @@ function migrate(s) {
     ...d, ...s,
     settings: { ...d.settings, ...(s.settings || {}) },
     custom: s.custom || {},
+    media: s.media || {},
     templates: s.templates || [],
     programs: s.programs || [],
     workouts: s.workouts || [],
@@ -202,15 +205,28 @@ if (typeof document !== 'undefined') {
 }
 
 // ---------- exercises ----------
-let exCache = { custom: null, merged: null };
+let exCache = { custom: null, media: null, merged: null };
 export function allExercises(s = state) {
-  if (exCache.custom !== s.custom) exCache = { custom: s.custom, merged: { ...BUILTIN_EXERCISES, ...s.custom } };
+  if (exCache.custom !== s.custom || exCache.media !== s.media) {
+    const merged = { ...BUILTIN_EXERCISES, ...s.custom };
+    for (const [id, m] of Object.entries(s.media || {})) if (merged[id]) merged[id] = { ...merged[id], media: m };
+    exCache = { custom: s.custom, media: s.media, merged };
+  }
   return exCache.merged;
 }
 export function saveCustomExercise(ex) {
   const id = ex.id || 'c-' + uid();
-  update((s) => ({ ...s, custom: { ...s.custom, [id]: { ...ex, id, custom: true } } }));
+  const { media, ...rest } = ex;
+  update((s) => ({ ...s, custom: { ...s.custom, [id]: { ...rest, id, custom: true } } }));
   return id;
+}
+// A found preview and/or a YouTube video for an exercise; null or empty removes it
+export function setMedia(id, media) {
+  update((s) => {
+    const m = { ...(s.media || {}) };
+    if (media && (media.src || media.yt)) m[id] = media; else delete m[id];
+    return { ...s, media: m };
+  });
 }
 export function exerciseInUse(id, s = state) {
   return s.workouts.some((w) => w.exercises.some((e) => e.exId === id))
@@ -218,7 +234,7 @@ export function exerciseInUse(id, s = state) {
     || (s.active && s.active.exercises.some((e) => e.exId === id));
 }
 export function deleteCustomExercise(id) {
-  update((s) => { const c = { ...s.custom }; delete c[id]; return { ...s, custom: c }; });
+  update((s) => { const c = { ...s.custom }; delete c[id]; const m = { ...(s.media || {}) }; delete m[id]; return { ...s, custom: c, media: m }; });
 }
 
 // ---------- settings ----------

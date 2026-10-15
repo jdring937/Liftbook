@@ -6,7 +6,7 @@ import { fmtW, fmtNum, fmtDateShort, fmtDateYear, fromKg, plural, wNum, fmtSecs 
 import { Icon, Header, Chips, pop, openSheet, confirmSheet, toast, Empty } from '../ui.jsx';
 import { LineChart } from '../components/charts.jsx';
 import { ExerciseForm } from './pickers.jsx';
-import { hasPreview, hasPhotos, ExVisual, ExGuide } from '../components/preview.jsx';
+import { hasPhotos, ExVisual, ExGuide, AddedPreviewPanel } from '../components/preview.jsx';
 import { liftStatus, painHistory, painCheck } from '../lib/insights.js';
 import { Sparkline } from '../components/charts.jsx';
 import { Why } from '../components/why.jsx';
@@ -116,17 +116,15 @@ export function ExerciseScreen({ id }) {
         sub={[EQUIPMENT[ex.equipment] || '', ex.primary.map((m) => MUSCLE_NAME[m]).join(', ')].filter(Boolean).join(', ')}
         right={editMenu && <button class="icon-btn" aria-label="Exercise options" onClick={editMenu}><Icon name="more" /></button>} />
       <div class="pad-16 stack-16">
-        {hasPreview(id) && (
+        {hasPhotos(id) ? (
           <section class="panel">
             <ExVisual ex={ex} />
-            {hasPhotos(id) && (
-              <details class="how" open={!all.length}>
-                <summary>How to do it</summary>
-                <ExGuide id={id} />
-              </details>
-            )}
+            <details class="how" open={!all.length}>
+              <summary>How to do it</summary>
+              <ExGuide ex={ex} />
+            </details>
           </section>
-        )}
+        ) : <AddedPreviewPanel ex={ex} openSteps={!all.length} />}
         {!all.length ? (
           <Empty title="No sessions yet" body="Once you log this exercise, its chart, records and history show up here." />
         ) : (
